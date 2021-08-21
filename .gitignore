@@ -1,0 +1,14 @@
+# created by virtualenv automatically
+Lib
+
+#Cache
+__pycache__
+
+#
+share
+
+#env
+pyvenv.cfg
+
+#env
+Scripts
