@@ -1,5 +1,5 @@
 from coordinate import Coordinate
-from numpy import empty
+import numpy as np
 import pandas as pd
 from PIL import Image
 import cv2
@@ -7,6 +7,7 @@ import cv2
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 from skimage import io, img_as_ubyte 
+from skimage.color import rgb2hed, hed2rgb
 
 #Valid value true = is usefull
 valid = True
@@ -35,6 +36,31 @@ def switchValid(x):
     valid = not valid
     pass
 
+def apply_brightness_contrast(input_img, brightness = 0, contrast = 0):
+    
+    if brightness != 0:
+        if brightness > 0:
+            shadow = brightness
+            highlight = 255
+        else:
+            shadow = 0
+            highlight = 255 + brightness
+        alpha_b = (highlight - shadow)/255
+        gamma_b = shadow
+        
+        buf = cv2.addWeighted(input_img, alpha_b, input_img, 0, gamma_b)
+    else:
+        buf = input_img.copy()
+    
+    if contrast != 0:
+        f = 131*(contrast + 127)/(127*(131-contrast))
+        alpha_c = f
+        gamma_c = 127*(1-f)
+        
+        buf = cv2.addWeighted(buf, alpha_c, buf, 0, gamma_c)
+
+    return buf
+
 if bg_image:
     image = Image.open(bg_image)
     w,h = image.size
@@ -51,6 +77,20 @@ if bg_image:
         #Default width 600
         key="canvas",
     )
+    
+    img = img_as_ubyte(image)
+    RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    bright = st.sidebar.slider( "Brillo" , min_value=-127 , max_value=127 , value=64 , step=None , format=None , key=None)
+    contrast = st.sidebar.slider( "Contraste" , min_value=-64 , max_value=64 , value=64 , step=None , format=None , key=None)
+       
+    st.text(bright)
+    st.text(contrast)
+
+    #Subir whiteness y brillo 64 y 64
+    out = apply_brightness_contrast(img, bright, contrast)
+    #Ejemplo
+    st.image(out)
 
     if canvas_result.json_data is not None:
         formas=pd.json_normalize(canvas_result.json_data["objects"])
@@ -71,18 +111,32 @@ if bg_image:
                 inicHigh = h * (top/400)
                 finHigh = h * (highSquare/400)
                 cropped = skimg[int(inicHigh):int(finHigh),int(inicTop):int(finWidth)]
-                img = img_as_ubyte(cropped)
-                RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                imgG = img_as_ubyte(cropped)
+                RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
             else:
-                img = img_as_ubyte(skimg)
-                RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                imgG = img_as_ubyte(skimg)
+                RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
+            
+            #Linea ejemplo
+            img  = apply_brightness_contrast(imgG, bright, contrast)
 
-            cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+
+            # Separate the stains from the IHC image Numpy
+            ihc_hed = rgb2hed(img)
+            null = np.zeros_like(ihc_hed[:, :, 0])
+            ihc_h = hed2rgb(np.stack((ihc_hed[:, :, 0], null, null), axis=-1))
+            ihc_e = hed2rgb(np.stack((null, ihc_hed[:, :, 1], null), axis=-1))
+            ihc_d = hed2rgb(np.stack((null, null, ihc_hed[:, :, 2]), axis=-1))
+            st.image(ihc_h)
+            st.image(ihc_e)
+            st.image(ihc_d)
+
+            #cv2.namedWindow('img', cv2.WINDOW_NORMAL)
             # create switch for ON/OFF functionality
-            cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
+            #cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
 
-            cv2.imshow('img', RGB_img)
-            cv2.setMouseCallback('img', click_event)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            #cv2.imshow('img', RGB_img)
+            #cv2.setMouseCallback('img', click_event)
+            #cv2.waitKey(0)
+            #cv2.destroyAllWindows()
     
