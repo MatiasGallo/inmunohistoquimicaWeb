@@ -1,4 +1,5 @@
 from coordinate import Coordinate
+from classes.queue import Queue
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -23,21 +24,22 @@ def click_event(event, x, y, flags, params):
     if (event == cv2.EVENT_LBUTTONDOWN) or (event==cv2.EVENT_RBUTTONDOWN):
         p = Coordinate(x,y)
         if (valid == True):
-            valids.append(p)
+            valids.append((x,y))
+            s_box = x, y
+            boxes.append(s_box)
         else:
             invalids.append(p)
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(RGB_img, '.' , ((x-5),y), font,
                     1, (0, 0, 0), 2)
         cv2.imshow('img', RGB_img)
-
+ 
 def switchValid(x):
     global valid
     valid = not valid
     pass
 
 def apply_brightness_contrast(input_img, brightness = 0, contrast = 0):
-    
     if brightness != 0:
         if brightness > 0:
             shadow = brightness
@@ -61,6 +63,75 @@ def apply_brightness_contrast(input_img, brightness = 0, contrast = 0):
 
     return buf
 
+def regiongrow(imageSrc,epsilon,start_point : list):
+
+    Q = Queue()
+    s = []
+    
+    print(start_point)
+    for i in start_point:
+        Q.enque(i)
+
+    image = imageSrc.convert("L")
+
+    st.image(image)
+    while not Q.isEmpty():
+
+        t = Q.deque()
+        x = t[0]
+        y = t[1]
+        
+        if x < image.size[0]-1 and \
+           abs(  image.getpixel( (x + 1 , y) ) - image.getpixel( (x , y) )  ) <= epsilon :
+            #print(image.getpixel( (x + 1 , y) ))
+            #print(image.getpixel( (x , y) ))
+            #print( image.getpixel( (x + 1 , y) ) - image.getpixel( (x , y) ))
+            #print('--------------------------')
+            if not Q.isInside( (x + 1 , y) ) and not (x + 1 , y) in s:
+                Q.enque( (x + 1 , y) )
+
+                
+        if x > 0 and \
+           abs(  image.getpixel( (x - 1 , y) ) - image.getpixel( (x , y) )  ) <= epsilon:
+
+            if not Q.isInside( (x - 1 , y) ) and not (x - 1 , y) in s:
+                Q.enque( (x - 1 , y) )
+
+                     
+        if y < (image.size[1] - 1) and \
+           abs(  image.getpixel( (x , y + 1) ) - image.getpixel( (x , y) )  ) <= epsilon:
+
+            if not Q.isInside( (x, y + 1) ) and not (x , y + 1) in s:
+                Q.enque( (x , y + 1) )
+
+                    
+        if y > 0 and \
+           abs(  image.getpixel( (x , y - 1) ) - image.getpixel( (x , y) )  ) <= epsilon:
+
+            if not Q.isInside( (x , y - 1) ) and not (x , y - 1) in s:
+                Q.enque( (x , y - 1) )
+
+
+        if t not in s:
+            s.append( t )
+
+            
+    image.load()
+    putpixel = image.im.putpixel
+    
+    for i in range ( image.size[0] ):
+        for j in range ( image.size[1] ):
+            putpixel( (i , j) , 0 )
+
+    for i in s:
+        putpixel(i , 150)
+        
+    
+    #output=raw_input("enter save fle name : ")
+    #image.thumbnail( (image.size[0] , image.size[1]) , Image.ANTIALIAS )
+    #image.save(output + ".JPEG" , "JPEG")
+    return image
+
 if bg_image:
     image = Image.open(bg_image)
     w,h = image.size
@@ -77,20 +148,16 @@ if bg_image:
         #Default width 600
         key="canvas",
     )
-    
+
     img = img_as_ubyte(image)
     RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
+    #Subir brillo y contraste
     bright = st.sidebar.slider( "Brillo" , min_value=-127 , max_value=127 , value=64 , step=None , format=None , key=None)
     contrast = st.sidebar.slider( "Contraste" , min_value=-64 , max_value=64 , value=64 , step=None , format=None , key=None)
-       
-    st.text(bright)
-    st.text(contrast)
-
-    #Subir whiteness y brillo 64 y 64
+    
     out = apply_brightness_contrast(img, bright, contrast)
-    #Ejemplo
-    st.image(out)
+    st.image(out)  
 
     if canvas_result.json_data is not None:
         formas=pd.json_normalize(canvas_result.json_data["objects"])
@@ -117,26 +184,33 @@ if bg_image:
                 imgG = img_as_ubyte(skimg)
                 RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
             
-            #Linea ejemplo
             img  = apply_brightness_contrast(imgG, bright, contrast)
 
-
+            boxes = []
             # Separate the stains from the IHC image Numpy
             ihc_hed = rgb2hed(img)
             null = np.zeros_like(ihc_hed[:, :, 0])
-            ihc_h = hed2rgb(np.stack((ihc_hed[:, :, 0], null, null), axis=-1))
-            ihc_e = hed2rgb(np.stack((null, ihc_hed[:, :, 1], null), axis=-1))
+            #ihc_h = hed2rgb(np.stack((ihc_hed[:, :, 0], null, null), axis=-1))
+            #ihc_e = hed2rgb(np.stack((null, ihc_hed[:, :, 1], null), axis=-1))
             ihc_d = hed2rgb(np.stack((null, null, ihc_hed[:, :, 2]), axis=-1))
-            st.image(ihc_h)
-            st.image(ihc_e)
+            #st.image(ihc_h)
+            #st.image(ihc_e)
             st.image(ihc_d)
 
-            #cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-            # create switch for ON/OFF functionality
-            #cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
+            #Imagen separada, canal marron en PIL
+            pil_image_brown=Image.fromarray((ihc_d * 255).astype(np.uint8))
+            print(type(pil_image_brown))
+            st.image(pil_image_brown)
 
-            #cv2.imshow('img', RGB_img)
-            #cv2.setMouseCallback('img', click_event)
-            #cv2.waitKey(0)
-            #cv2.destroyAllWindows()
-    
+            cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+            # create switch for ON/OFF functionality
+            cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
+            cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
+            cv2.imshow('img', RGB_img)
+            cv2.setMouseCallback('img',click_event)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+            print ('Inicio RG')
+            st.image(regiongrow(pil_image_brown,1.2,valids))
+            print ('fin RG')
