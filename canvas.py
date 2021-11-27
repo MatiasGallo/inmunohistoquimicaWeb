@@ -1,20 +1,25 @@
 from coordinate import Coordinate
 from classes.queue import Queue
 import numpy as np
+from numpy import median
 import pandas as pd
 from PIL import Image
 import cv2
 
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
-from skimage import io, img_as_ubyte 
+from skimage import io, img_as_ubyte
 from skimage.color import rgb2hed, hed2rgb
+
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 #Valid value true = is usefull
 valid = True
 #List of valid an invalid points
 valids = []
 invalids = []
+boxes = []
 
 # Specify canvas parameters in application
 stroke_width = 1
@@ -33,7 +38,7 @@ def click_event(event, x, y, flags, params):
         cv2.putText(RGB_img, '.' , ((x-5),y), font,
                     1, (0, 0, 0), 2)
         cv2.imshow('img', RGB_img)
- 
+
 def switchValid(x):
     global valid
     valid = not valid
@@ -83,11 +88,9 @@ def regiongrow(imageSrc,epsilon,start_point : list):
         
         if x < image.size[0]-1 and \
            abs(  image.getpixel( (x + 1 , y) ) - image.getpixel( (x , y) )  ) <= epsilon :
-            #print(image.getpixel( (x + 1 , y) ))
-            #print(image.getpixel( (x , y) ))
-            #print( image.getpixel( (x + 1 , y) ) - image.getpixel( (x , y) ))
-            #print('--------------------------')
             if not Q.isInside( (x + 1 , y) ) and not (x + 1 , y) in s:
+                print( image.getpixel( (x , y) ) )
+                print( image.getpixel( (x + 1 , y) ) ) 
                 Q.enque( (x + 1 , y) )
 
                 
@@ -126,11 +129,114 @@ def regiongrow(imageSrc,epsilon,start_point : list):
     for i in s:
         putpixel(i , 150)
         
+    return image
+
+def regiongrowMediana(imageSrc,epsilon,start_point : list):
+    print('Calculando')
+    Q = Queue()
+    s = []
+
+    color = []
+    
+    print(start_point)
+    for i in start_point:
+        Q.enque(i)
+
+    image = imageSrc.convert("L")
+
+    #Preparado para calcular mediana
+    for pixel in start_point:
+        x = pixel[0]
+        y = pixel[1]
+        color.append(image.getpixel( (x , y) ))
+
+    print( color )   
+    print( median(color))
+
+    st.image(image)
+    while not Q.isEmpty():
+        
+        #print( median(color))
+
+        t = Q.deque()
+        x = t[0]
+        y = t[1]
+        
+        if x < image.size[0]-1 and \
+           abs(  image.getpixel( (x + 1 , y) ) - median(color)  ) <= epsilon :
+            if not Q.isInside( (x + 1 , y) ) and not (x + 1 , y) in s:
+                #print("-------------")
+                #print(image.getpixel( (x + 1 , y) ))
+                color.append(image.getpixel( (x + 1, y) ))
+                Q.enque( (x + 1 , y) )
+
+                
+        if x > 0 and \
+           abs(  image.getpixel( (x - 1 , y) ) - median(color)  ) <= epsilon:
+            if not Q.isInside( (x - 1 , y) ) and not (x - 1 , y) in s:
+                #print("-------------")
+                #print(image.getpixel( (x -1 , y) ))
+                color.append(image.getpixel( (x - 1 , y) ))
+                Q.enque( (x - 1 , y) )
+
+                     
+        if y < (image.size[1] - 1) and \
+           abs(  image.getpixel( (x , y + 1) ) - median(color)  ) <= epsilon:
+            if not Q.isInside( (x, y + 1) ) and not (x , y + 1) in s:
+                #print("-------------")
+                #print(image.getpixel( (x , y + 1)))
+                color.append(image.getpixel( (x , y + 1) ))
+                Q.enque( (x , y + 1) )
+
+                    
+        if y > 0 and \
+           abs(  image.getpixel( (x , y - 1) ) - median(color)  ) <= epsilon:
+            if not Q.isInside( (x , y - 1) ) and not (x , y - 1) in s:
+                #print("-------------")
+                #print(image.getpixel( (x , y - 1) ))
+                color.append(image.getpixel( (x , y - 1) ))
+                Q.enque( (x , y - 1) )
+
+
+        if t not in s:
+            s.append( t )
+
+            
+    image.load()
+    putpixel = image.im.putpixel
+    
+    for i in range ( image.size[0] ):
+        for j in range ( image.size[1] ):
+            putpixel( (i , j) , 0 )
+
+    for i in s:
+        putpixel(i , 150)
+        
     
     #output=raw_input("enter save fle name : ")
     #image.thumbnail( (image.size[0] , image.size[1]) , Image.ANTIALIAS )
     #image.save(output + ".JPEG" , "JPEG")
     return image
+
+def test_method(imageSrc, start_point : list):
+    imageGrey = imageSrc.convert("L")
+    st.image(imageGrey)
+
+    newW,newH = imageSrc.size
+    print(newW,newH)
+
+    widthGrey,HeightGrey = imageGrey.size
+    print(widthGrey,HeightGrey)
+#    relationX = newW / widthGrey
+#    relationY = newH / HeightGrey
+#    print(relationX,relationY)
+
+    for pixel in start_point:
+        x = pixel[0]
+        y = pixel[1]
+        print((x , y))
+        print(imageSrc.getpixel( (x , y) ))
+        print(imageGrey.getpixel( (x , y) ))
 
 if bg_image:
     image = Image.open(bg_image)
@@ -179,14 +285,11 @@ if bg_image:
                 finHigh = h * (highSquare/400)
                 cropped = skimg[int(inicHigh):int(finHigh),int(inicTop):int(finWidth)]
                 imgG = img_as_ubyte(cropped)
-                RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
             else:
                 imgG = img_as_ubyte(skimg)
-                RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
             
             img  = apply_brightness_contrast(imgG, bright, contrast)
-
-            boxes = []
+            
             # Separate the stains from the IHC image Numpy
             ihc_hed = rgb2hed(img)
             null = np.zeros_like(ihc_hed[:, :, 0])
@@ -195,16 +298,18 @@ if bg_image:
             ihc_d = hed2rgb(np.stack((null, null, ihc_hed[:, :, 2]), axis=-1))
             #st.image(ihc_h)
             #st.image(ihc_e)
-            st.image(ihc_d)
+            #st.image(ihc_d)
 
             #Imagen separada, canal marron en PIL
             pil_image_brown=Image.fromarray((ihc_d * 255).astype(np.uint8))
-            print(type(pil_image_brown))
             st.image(pil_image_brown)
 
+            imgG = img_as_ubyte(pil_image_brown)
+            RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
+            
             cv2.namedWindow('img', cv2.WINDOW_NORMAL)
             # create switch for ON/OFF functionality
-            cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
+            #cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
             cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
             cv2.imshow('img', RGB_img)
             cv2.setMouseCallback('img',click_event)
@@ -212,5 +317,11 @@ if bg_image:
             cv2.destroyAllWindows()
 
             print ('Inicio RG')
-            st.image(regiongrow(pil_image_brown,1.2,valids))
+            #st.image(regiongrow(pil_image_brown,1,valids))
+            #test_method(pil_image_brown,valids)
+            regionGrowResult = regiongrowMediana(pil_image_brown,35,valids)
+            st.image(regionGrowResult)
             print ('fin RG')
+
+            print(regionGrowResult.histogram())
+            st.bar_chart(regionGrowResult.histogram())
