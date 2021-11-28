@@ -1,4 +1,4 @@
-from coordinate import Coordinate
+from classes.coordinate import Coordinate
 from classes.queue import Queue
 import numpy as np
 from numpy import median
@@ -227,9 +227,9 @@ def test_method(imageSrc, start_point : list):
 
     widthGrey,HeightGrey = imageGrey.size
     print(widthGrey,HeightGrey)
-#    relationX = newW / widthGrey
-#    relationY = newH / HeightGrey
-#    print(relationX,relationY)
+    #relationX = newW / widthGrey
+    #relationY = newH / HeightGrey
+    #print(relationX,relationY)
 
     for pixel in start_point:
         x = pixel[0]
