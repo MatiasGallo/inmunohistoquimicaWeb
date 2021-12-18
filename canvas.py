@@ -1,4 +1,3 @@
-from classes.coordinate import Coordinate
 from classes.queue import Queue
 import numpy as np
 from numpy import median
@@ -10,9 +9,6 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 from skimage import io, img_as_ubyte
 from skimage.color import rgb2hed, hed2rgb
-
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 
 #Valid value true = is usefull
 valid = True
@@ -377,6 +373,8 @@ if 'RegionGrow' in st.session_state:
 if 'pil_image_brown' in st.session_state:
     st.sidebar.text("Blob Params")
 
+    im = img_as_ubyte(st.session_state['pil_image_brown'])
+
     params = cv2.SimpleBlobDetector_Params()
 
     params.minThreshold = st.sidebar.slider( "MinThreshold" , min_value=0 , max_value=1000 , value=st.session_state['MinThreshold'] , step=None , format=None , key=None)
@@ -387,12 +385,7 @@ if 'pil_image_brown' in st.session_state:
 
     params.filterByCircularity = True
     params.minCircularity = st.sidebar.slider( "Circularidad" , min_value=0.0 , max_value=1.0 , value=st.session_state['Circularidad'], step=0.1 , format=None , key=None)
-
-    #params.filterByColor = True
-    #params.blobColor = st.sidebar.slider( "Blob Color" , min_value=1 , max_value=255 , value=st.session_state['Blob Color'] , step=1 , format=None , key=None)
-
-
-    im = img_as_ubyte(st.session_state['pil_image_brown'])
+   
     detector = cv2.SimpleBlobDetector_create(params)
     keypoints = detector.detect(im)
 
@@ -414,6 +407,3 @@ if 'pil_image_brown' in st.session_state:
 if 'BlobImage' in st.session_state:
     st.text("Blob")
     st.image(st.session_state['BlobImage'])
-
-if st.sidebar.button('Separador [DevTools]'):
-    print("----------------------")
