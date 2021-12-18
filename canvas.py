@@ -34,6 +34,18 @@ if 'contrast' not in st.session_state:
 if 'Epsilon' not in st.session_state:
     st.session_state['Epsilon'] = 25
 
+if 'MinThreshold' not in st.session_state:
+    st.session_state['MinThreshold'] = 80
+
+if 'MaxThreshold' not in st.session_state:
+    st.session_state['MaxThreshold'] = 500
+
+if 'Area' not in st.session_state:
+    st.session_state['Area'] = 625
+
+if 'Circularidad' not in st.session_state:
+    st.session_state['Circularidad'] = 0.7
+
 def click_event(event, x, y, flags, params):
     if (event == cv2.EVENT_LBUTTONDOWN) or (event==cv2.EVENT_RBUTTONDOWN):
         valids.append((x,y))
@@ -219,6 +231,43 @@ def regiongrowMediana(imageSrc,epsilon,start_point : list):
     #image.save(output + ".JPEG" , "JPEG")
     return image
 
+def Blob_Detection_Cv2(image):
+    #Blob detection
+    im = img_as_ubyte(image)
+
+    params = cv2.SimpleBlobDetector_Params()
+
+    params.minThreshold = st.sidebar.slider( "MinThreshold" , min_value=0 , max_value=1000 , value=st.session_state['MinThreshold'] , step=None , format=None , key=None)
+    params.maxThreshold = st.sidebar.slider( "MaxThreshold" , min_value=0 , max_value=2000 , value=st.session_state['MaxThreshold'] , step=None , format=None , key=None)
+
+    params.filterByArea = True
+    params.minArea = st.sidebar.slider( "Area" , min_value=0 , max_value=1000 , value=st.session_state['Area'] , step=None , format=None , key=None)
+
+    params.filterByCircularity = True
+    params.minCircularity = st.sidebar.slider( "Circularidad" , min_value=0.0 , max_value=1.0 , value=st.session_state['Circularidad'], step=0.1 , format=None , key=None)
+
+    params.filterByColor = True
+    params.blobColor = st.sidebar.slider( "Blob Color" , min_value=1 , max_value=255 , value=st.session_state['Blob Color'] , step=1 , format=None , key=None)
+
+    detector = cv2.SimpleBlobDetector_create(params)
+    keypoints = detector.detect(im)
+
+    im_with_keypoints = cv2.drawKeypoints(im, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+            
+            
+    im_pil = Image.fromarray(im_with_keypoints)
+    st.image(im_pil)
+
+    print("keypoints")
+    for keyPoint in keypoints:
+        x = keyPoint.pt[0]
+        y = keyPoint.pt[1]
+        s = keyPoint.size
+        print(keyPoint)
+        print(x)
+        print(y)
+        print(s)
+
 if bg_image:
     image = Image.open(bg_image)
     w,h = image.size
@@ -244,6 +293,7 @@ if bg_image:
     st.session_state['contrast'] = st.sidebar.slider( "Contraste" , min_value=-64 , max_value=64 , value=st.session_state['contrast'], step=None , format=None , key=None)
     
     out = apply_brightness_contrast(img, st.session_state['bright'], st.session_state['contrast'])
+    st.text("Brillo")
     st.image(out)  
 
     if canvas_result.json_data is not None:
@@ -289,6 +339,7 @@ if 'img_brightness_contrast' in st.session_state:
         st.session_state['pil_image_brown'] = pil_image_brown
 
 if 'pil_image_brown' in st.session_state:
+    st.text("Marron")
     st.image(st.session_state['pil_image_brown'])
 
     if st.sidebar.button('Seeds'):
@@ -309,11 +360,60 @@ if 'pil_image_brown' in st.session_state:
 if 'clicks' in st.session_state and 'pil_image_brown' in st.session_state:
     st.session_state['Epsilon'] = st.sidebar.slider( "Epsilon" , min_value=1 , max_value=127 , value=st.session_state['Epsilon'] , step=None , format=None , key=None)
     if st.sidebar.button('Region Grow'):
-        print ('Inicio RG')
 
-        regionGrowResult = regiongrowMediana(st.session_state['pil_image_brown'],st.session_state['Epsilon'],st.session_state['clicks'])
-        st.image(regionGrowResult)
-        print ('fin RG')
+        with st.spinner('Wait for it...'):
+            regionGrowResult = regiongrowMediana(st.session_state['pil_image_brown'],st.session_state['Epsilon'],st.session_state['clicks'])
 
-        print(regionGrowResult.histogram())
-        st.bar_chart(regionGrowResult.histogram())
+            st.session_state['regionGrowResult'] = regionGrowResult
+            #st.image(regionGrowResult)
+
+            #print(regionGrowResult.histogram())
+            #st.bar_chart(regionGrowResult.histogram())
+
+if 'RegionGrow' in st.session_state:
+    st.text("RegionGrow")
+    st.image(st.session_state['RegionGrow'])
+
+if 'pil_image_brown' in st.session_state:
+    st.sidebar.text("Blob Params")
+
+    params = cv2.SimpleBlobDetector_Params()
+
+    params.minThreshold = st.sidebar.slider( "MinThreshold" , min_value=0 , max_value=1000 , value=st.session_state['MinThreshold'] , step=None , format=None , key=None)
+    params.maxThreshold = st.sidebar.slider( "MaxThreshold" , min_value=0 , max_value=2000 , value=st.session_state['MaxThreshold'] , step=None , format=None , key=None)
+
+    params.filterByArea = True
+    params.minArea = st.sidebar.slider( "Area" , min_value=0 , max_value=1000 , value=st.session_state['Area'] , step=None , format=None , key=None)
+
+    params.filterByCircularity = True
+    params.minCircularity = st.sidebar.slider( "Circularidad" , min_value=0.0 , max_value=1.0 , value=st.session_state['Circularidad'], step=0.1 , format=None , key=None)
+
+    #params.filterByColor = True
+    #params.blobColor = st.sidebar.slider( "Blob Color" , min_value=1 , max_value=255 , value=st.session_state['Blob Color'] , step=1 , format=None , key=None)
+
+
+    im = img_as_ubyte(st.session_state['pil_image_brown'])
+    detector = cv2.SimpleBlobDetector_create(params)
+    keypoints = detector.detect(im)
+
+    im_with_keypoints = cv2.drawKeypoints(im, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+            
+    im_pil = Image.fromarray(im_with_keypoints)
+    st.session_state['BlobImage'] = im_pil
+            
+    print("keypoints")
+    for keyPoint in keypoints:
+        x = keyPoint.pt[0]
+        y = keyPoint.pt[1]
+        s = keyPoint.size
+        print(keyPoint)
+        print(x)
+        print(y)
+        print(s)
+                
+if 'BlobImage' in st.session_state:
+    st.text("Blob")
+    st.image(st.session_state['BlobImage'])
+
+if st.sidebar.button('Separador [DevTools]'):
+    print("----------------------")
