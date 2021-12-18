@@ -31,19 +31,19 @@ if 'bright' not in st.session_state:
 if 'contrast' not in st.session_state:
     st.session_state['contrast'] = 64
 
+if 'Epsilon' not in st.session_state:
+    st.session_state['Epsilon'] = 25
+
 def click_event(event, x, y, flags, params):
     if (event == cv2.EVENT_LBUTTONDOWN) or (event==cv2.EVENT_RBUTTONDOWN):
-        p = Coordinate(x,y)
-        if (valid == True):
-            valids.append((x,y))
-            s_box = x, y
-            boxes.append(s_box)
-        else:
-            invalids.append(p)
+        valids.append((x,y))
+        s_box = x, y
+        boxes.append(s_box)
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(RGB_img, '.' , ((x-5),y), font,
                     1, (0, 0, 0), 2)
         cv2.imshow('img', RGB_img)
+        st.session_state['clicks'] = valids
 
 def apply_brightness_contrast(input_img, brightness = 0, contrast = 0):
     if brightness != 0:
@@ -219,26 +219,6 @@ def regiongrowMediana(imageSrc,epsilon,start_point : list):
     #image.save(output + ".JPEG" , "JPEG")
     return image
 
-def test_method(imageSrc, start_point : list):
-    imageGrey = imageSrc.convert("L")
-    st.image(imageGrey)
-
-    newW,newH = imageSrc.size
-    print(newW,newH)
-
-    widthGrey,HeightGrey = imageGrey.size
-    print(widthGrey,HeightGrey)
-    #relationX = newW / widthGrey
-    #relationY = newH / HeightGrey
-    #print(relationX,relationY)
-
-    for pixel in start_point:
-        x = pixel[0]
-        y = pixel[1]
-        print((x , y))
-        print(imageSrc.getpixel( (x , y) ))
-        print(imageGrey.getpixel( (x , y) ))
-
 if bg_image:
     image = Image.open(bg_image)
     w,h = image.size
@@ -290,39 +270,50 @@ if bg_image:
                 imgG = img_as_ubyte(skimg)
             
             img  = apply_brightness_contrast(imgG, st.session_state['bright'], st.session_state['contrast'])
+            st.session_state['img_brightness_contrast'] = img
+
+if 'img_brightness_contrast' in st.session_state:
+    if st.sidebar.button('Separar'):
+        # Separate the stains from the IHC image Numpy
+        ihc_hed = rgb2hed(st.session_state['img_brightness_contrast'])
+        null = np.zeros_like(ihc_hed[:, :, 0])
+        #ihc_h = hed2rgb(np.stack((ihc_hed[:, :, 0], null, null), axis=-1))
+        #ihc_e = hed2rgb(np.stack((null, ihc_hed[:, :, 1], null), axis=-1))
+        ihc_d = hed2rgb(np.stack((null, null, ihc_hed[:, :, 2]), axis=-1))
+        #st.image(ihc_h)
+        #st.image(ihc_e)
+        #st.image(ihc_d)
+
+        #Imagen separada, canal marron en PIL
+        pil_image_brown=Image.fromarray((ihc_d * 255).astype(np.uint8))
+        st.session_state['pil_image_brown'] = pil_image_brown
+
+if 'pil_image_brown' in st.session_state:
+    st.image(st.session_state['pil_image_brown'])
+
+    if st.sidebar.button('Seeds'):
+        st.session_state['clicks'] = []
+
+        imgG = img_as_ubyte(st.session_state['pil_image_brown'])
+        RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
             
-            # Separate the stains from the IHC image Numpy
-            ihc_hed = rgb2hed(img)
-            null = np.zeros_like(ihc_hed[:, :, 0])
-            #ihc_h = hed2rgb(np.stack((ihc_hed[:, :, 0], null, null), axis=-1))
-            #ihc_e = hed2rgb(np.stack((null, ihc_hed[:, :, 1], null), axis=-1))
-            ihc_d = hed2rgb(np.stack((null, null, ihc_hed[:, :, 2]), axis=-1))
-            #st.image(ihc_h)
-            #st.image(ihc_e)
-            #st.image(ihc_d)
+        cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+        # create switch for ON/OFF functionality
+        #cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
+        cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
+        cv2.imshow('img', RGB_img)
+        cv2.setMouseCallback('img',click_event)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
-            #Imagen separada, canal marron en PIL
-            pil_image_brown=Image.fromarray((ihc_d * 255).astype(np.uint8))
-            st.image(pil_image_brown)
+if 'clicks' in st.session_state and 'pil_image_brown' in st.session_state:
+    st.session_state['Epsilon'] = st.sidebar.slider( "Epsilon" , min_value=1 , max_value=127 , value=st.session_state['Epsilon'] , step=None , format=None , key=None)
+    if st.sidebar.button('Region Grow'):
+        print ('Inicio RG')
 
-            imgG = img_as_ubyte(pil_image_brown)
-            RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
-            
-            cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-            # create switch for ON/OFF functionality
-            #cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
-            cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
-            cv2.imshow('img', RGB_img)
-            cv2.setMouseCallback('img',click_event)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+        regionGrowResult = regiongrowMediana(st.session_state['pil_image_brown'],st.session_state['Epsilon'],st.session_state['clicks'])
+        st.image(regionGrowResult)
+        print ('fin RG')
 
-            print ('Inicio RG')
-            #st.image(regiongrow(pil_image_brown,1,valids))
-            #test_method(pil_image_brown,valids)
-            regionGrowResult = regiongrowMediana(pil_image_brown,35,valids)
-            st.image(regionGrowResult)
-            print ('fin RG')
-
-            print(regionGrowResult.histogram())
-            st.bar_chart(regionGrowResult.histogram())
+        print(regionGrowResult.histogram())
+        st.bar_chart(regionGrowResult.histogram())
