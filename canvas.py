@@ -25,6 +25,12 @@ boxes = []
 stroke_width = 1
 bg_image = st.sidebar.file_uploader("Image:", type=["png", "jpg"])
 
+if 'bright' not in st.session_state:
+    st.session_state['bright'] = 64
+
+if 'contrast' not in st.session_state:
+    st.session_state['contrast'] = 64
+
 def click_event(event, x, y, flags, params):
     if (event == cv2.EVENT_LBUTTONDOWN) or (event==cv2.EVENT_RBUTTONDOWN):
         p = Coordinate(x,y)
@@ -38,11 +44,6 @@ def click_event(event, x, y, flags, params):
         cv2.putText(RGB_img, '.' , ((x-5),y), font,
                     1, (0, 0, 0), 2)
         cv2.imshow('img', RGB_img)
-
-def switchValid(x):
-    global valid
-    valid = not valid
-    pass
 
 def apply_brightness_contrast(input_img, brightness = 0, contrast = 0):
     if brightness != 0:
@@ -259,10 +260,10 @@ if bg_image:
     RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     #Subir brillo y contraste
-    bright = st.sidebar.slider( "Brillo" , min_value=-127 , max_value=127 , value=64 , step=None , format=None , key=None)
-    contrast = st.sidebar.slider( "Contraste" , min_value=-64 , max_value=64 , value=64 , step=None , format=None , key=None)
+    st.session_state['bright'] = st.sidebar.slider( "Brillo" , min_value=-127 , max_value=127 , value=st.session_state['bright'] , step=None , format=None , key=None)
+    st.session_state['contrast'] = st.sidebar.slider( "Contraste" , min_value=-64 , max_value=64 , value=st.session_state['contrast'], step=None , format=None , key=None)
     
-    out = apply_brightness_contrast(img, bright, contrast)
+    out = apply_brightness_contrast(img, st.session_state['bright'], st.session_state['contrast'])
     st.image(out)  
 
     if canvas_result.json_data is not None:
@@ -288,7 +289,7 @@ if bg_image:
             else:
                 imgG = img_as_ubyte(skimg)
             
-            img  = apply_brightness_contrast(imgG, bright, contrast)
+            img  = apply_brightness_contrast(imgG, st.session_state['bright'], st.session_state['contrast'])
             
             # Separate the stains from the IHC image Numpy
             ihc_hed = rgb2hed(img)
