@@ -33,11 +33,8 @@ if bg_image:
         key="canvas",
     )
 
-    print("Original")
-    print(w,h)
-
     # Do something interesting with the image data and paths
-    opencvImage = cv2.cvtColor(numpy.array(image), cv2.COLOR_BGR2RGB)
+    opencvImage = cv2.cvtColor(numpy.array(image), cv2.COLOR_RGB2BGR)
     if canvas_result.json_data is not None:
         objects = pd.json_normalize(canvas_result.json_data["objects"]) # need to convert obj to str because PyArrow
 
@@ -53,21 +50,12 @@ if bg_image:
             inicY = top + y1
             endY  = top + y2
 
-            print(inicX, inicY)
-            print(endX2, endY)
-            print("-----------")
-
             startingX = w * (inicX/600)
             finishX = w * (endX2/600)
             statingY = h * (inicY/400)
             finishY = h * (endY/400)
-
-            print(int(startingX), int(statingY))
-            print(int(finishX), int(finishY))
-            print("-----------")
             
-            
-            cv2.line(opencvImage, pt1=(int(startingX),int(statingY)), pt2=(int(finishX),int(finishY)), color=(0,0,255), thickness=10)
+            cv2.line(opencvImage, pt1=(int(startingX),int(statingY)), pt2=(int(finishX),int(finishY)), color=(255,255,255), thickness=10)
             
 
         for col in objects.select_dtypes(include=['object']).columns:
@@ -75,4 +63,6 @@ if bg_image:
 
         st.dataframe(objects)
     
-    st.image(opencvImage)
+    opencvImage2 = cv2.cvtColor(numpy.array(opencvImage), cv2.COLOR_RGB2BGR)
+    im = img_as_ubyte(opencvImage2)
+    st.image(im)
