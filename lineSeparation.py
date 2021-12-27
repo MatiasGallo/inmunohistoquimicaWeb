@@ -39,24 +39,29 @@ if bg_image:
         objects = pd.json_normalize(canvas_result.json_data["objects"]) # need to convert obj to str because PyArrow
 
         for index in range(0, len(objects)):
-            left = objects['left'][index]
-            top = objects['top'][index]
-            x1 = objects['x1'][index]
-            x2 = objects['x2'][index]
-            y1 = objects['y1'][index]
-            y2 = objects['y2'][index]
-            inicX = left + x1
-            endX2 = left + x2
-            inicY = top + y1
-            endY  = top + y2
+            if objects['type'][index] == "line":
+                left = objects['left'][index]
+                top = objects['top'][index]
+                x1 = objects['x1'][index]
+                x2 = objects['x2'][index]
+                y1 = objects['y1'][index]
+                y2 = objects['y2'][index]
+                inicX = left + x1
+                endX2 = left + x2
+                inicY = top + y1
+                endY  = top + y2
 
-            startingX = w * (inicX/600)
-            finishX = w * (endX2/600)
-            statingY = h * (inicY/400)
-            finishY = h * (endY/400)
+                startingX = w * (inicX/600)
+                finishX = w * (endX2/600)
+                statingY = h * (inicY/400)
+                finishY = h * (endY/400)
             
-            cv2.line(opencvImage, pt1=(int(startingX),int(statingY)), pt2=(int(finishX),int(finishY)), color=(255,255,255), thickness=10)
-            
+                cv2.line(opencvImage, pt1=(int(startingX),int(statingY)), pt2=(int(finishX),int(finishY)), color=(255,255,255), thickness=10)
+            elif objects['type'][index] == "rect":
+                st.session_state['left'] = objects['left'][index]
+                st.session_state['top'] = objects['top'][index]
+                st.session_state['width'] = objects['width'][index]
+                st.session_state['height'] = objects['height'][index]
 
         for col in objects.select_dtypes(include=['object']).columns:
             objects[col] = objects[col].astype("str")
@@ -66,3 +71,20 @@ if bg_image:
     opencvImage2 = cv2.cvtColor(numpy.array(opencvImage), cv2.COLOR_RGB2BGR)
     im = img_as_ubyte(opencvImage2)
     st.image(im)
+    if st.sidebar.button('Recortar'):
+            # plugin='matplotlib'
+            skimg = im
+            if st.session_state['left']:
+                endSquare=st.session_state['left'] + st.session_state['width']
+                highSquare = st.session_state['top'] + st.session_state['height']
+                inicTop = w * (st.session_state['left']/600)
+                finWidth = w * (endSquare/600)
+                inicHigh = h * (st.session_state['top']/400)
+                finHigh = h * (highSquare/400)
+                cropped = skimg[int(inicHigh):int(finHigh),int(inicTop):int(finWidth)]
+                imgG = img_as_ubyte(cropped)
+            else:
+                imgG = img_as_ubyte(skimg)
+
+            st.image(imgG)
+    
