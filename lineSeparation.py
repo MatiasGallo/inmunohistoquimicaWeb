@@ -74,7 +74,7 @@ if bg_image:
     if st.sidebar.button('Recortar'):
             # plugin='matplotlib'
             skimg = im
-            if st.session_state['left']:
+            if 'left' in st.session_state:
                 endSquare=st.session_state['left'] + st.session_state['width']
                 highSquare = st.session_state['top'] + st.session_state['height']
                 inicTop = w * (st.session_state['left']/600)
