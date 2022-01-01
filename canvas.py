@@ -265,6 +265,8 @@ def Blob_Detection_Cv2(image):
         print(s)
 
 if bg_image:
+    drawing_mode = st.sidebar.selectbox("Drawing tool:", ("line", "rect"))
+
     image = Image.open(bg_image)
     w,h = image.size
     newsize = (int(w/2), int(h/2))
@@ -275,7 +277,7 @@ if bg_image:
         stroke_width=stroke_width,
         background_image=newImage if bg_image else None,
         update_streamlit='true',
-        drawing_mode="rect",
+        drawing_mode=drawing_mode,
         #Default hight 400
         #Default width 600
         key="canvas",
@@ -286,36 +288,60 @@ if bg_image:
 
     if canvas_result.json_data is not None:
         formas=pd.json_normalize(canvas_result.json_data["objects"])
-        if len(formas) != 0: 
-            st.dataframe(formas)
-            left = formas['left'][0]
-            top = formas['top'][0]
-            width = formas['width'][0]
-            endSquare=left + width
-            height = formas['height'][0]
-            highSquare = top + height
+
+        for index in range(0, len(formas)):
+            if formas['type'][index] == "line":
+                left = formas['left'][index]
+                top = formas['top'][index]
+                x1 = formas['x1'][index]
+                x2 = formas['x2'][index]
+                y1 = formas['y1'][index]
+                y2 = formas['y2'][index]
+                inicX = left + x1
+                endX2 = left + x2
+                inicY = top + y1
+                endY  = top + y2
+
+                startingX = w * (inicX/600)
+                finishX = w * (endX2/600)
+                statingY = h * (inicY/400)
+                finishY = h * (endY/400)
+            
+                cv2.line(RGB_img, pt1=(int(startingX),int(statingY)), pt2=(int(finishX),int(finishY)), color=(255,255,255), thickness=10)
+            elif formas['type'][index] == "rect":
+                st.session_state['left'] = formas['left'][index]
+                st.session_state['top'] = formas['top'][index]
+                st.session_state['width'] = formas['width'][index]
+                st.session_state['height'] = formas['height'][index]
+
+        opencvImage2 = cv2.cvtColor(np.array(RGB_img), cv2.COLOR_RGB2BGR)
+        im = img_as_ubyte(opencvImage2)
+        st.image(im)
+
         if st.sidebar.button('Recortar'):
             # plugin='matplotlib'
-            skimg = io.imread(bg_image,plugin='matplotlib')
-            if len(formas) != 0: 
-                inicTop = w * (left/600)
+            skimg = im
+            if 'left' in st.session_state:
+                endSquare=st.session_state['left'] + st.session_state['width']
+                highSquare = st.session_state['top'] + st.session_state['height']
+                inicTop = w * (st.session_state['left']/600)
                 finWidth = w * (endSquare/600)
-                inicHigh = h * (top/400)
+                inicHigh = h * (st.session_state['top']/400)
                 finHigh = h * (highSquare/400)
                 cropped = skimg[int(inicHigh):int(finHigh),int(inicTop):int(finWidth)]
                 imgG = img_as_ubyte(cropped)
-                st.session_state['img_prepation'] = img
+                st.session_state['img_prepation'] = imgG
             else:
                 imgG = img_as_ubyte(skimg)
-                st.session_state['img_prepation'] = img          
+                st.session_state['img_prepation'] = imgG          
 
 if 'img_prepation' in st.session_state:
     #Subir brillo y contraste
     st.session_state['bright'] = st.sidebar.slider( "Brillo" , min_value=-127 , max_value=127 , value=st.session_state['bright'] , step=None , format=None , key=None)
     st.session_state['contrast'] = st.sidebar.slider( "Contraste" , min_value=-64 , max_value=127 , value=st.session_state['contrast'], step=None , format=None , key=None)
 
-    img  = apply_brightness_contrast(st.session_state['img_prepation'], st.session_state['bright'], st.session_state['contrast'])
-    st.session_state['img_brightness_contrast'] = img
+    imgBright  = apply_brightness_contrast(st.session_state['img_prepation'], st.session_state['bright'], st.session_state['contrast'])
+    st.session_state['img_brightness_contrast'] = imgBright
 
 if 'img_brightness_contrast' in st.session_state:
     st.text("Brillo")
@@ -367,9 +393,9 @@ if 'clicks' in st.session_state and 'pil_image_brown' in st.session_state:
             #print(regionGrowResult.histogram())
             #st.bar_chart(regionGrowResult.histogram())
 
-if 'RegionGrow' in st.session_state:
+if 'regionGrowResult' in st.session_state:
     st.text("RegionGrow")
-    st.image(st.session_state['RegionGrow'])
+    st.image(st.session_state['regionGrowResult'])
 
 if 'pil_image_brown' in st.session_state:
     st.sidebar.text("Blob Params")
