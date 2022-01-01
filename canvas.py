@@ -284,14 +284,6 @@ if bg_image:
     img = img_as_ubyte(image)
     RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    #Subir brillo y contraste
-    st.session_state['bright'] = st.sidebar.slider( "Brillo" , min_value=-127 , max_value=127 , value=st.session_state['bright'] , step=None , format=None , key=None)
-    st.session_state['contrast'] = st.sidebar.slider( "Contraste" , min_value=-64 , max_value=64 , value=st.session_state['contrast'], step=None , format=None , key=None)
-    
-    out = apply_brightness_contrast(img, st.session_state['bright'], st.session_state['contrast'])
-    st.text("Brillo")
-    st.image(out)  
-
     if canvas_result.json_data is not None:
         formas=pd.json_normalize(canvas_result.json_data["objects"])
         if len(formas) != 0: 
@@ -312,27 +304,36 @@ if bg_image:
                 finHigh = h * (highSquare/400)
                 cropped = skimg[int(inicHigh):int(finHigh),int(inicTop):int(finWidth)]
                 imgG = img_as_ubyte(cropped)
+                st.session_state['img_prepation'] = img
             else:
                 imgG = img_as_ubyte(skimg)
-            
-            img  = apply_brightness_contrast(imgG, st.session_state['bright'], st.session_state['contrast'])
-            st.session_state['img_brightness_contrast'] = img
+                st.session_state['img_prepation'] = img          
+
+if 'img_prepation' in st.session_state:
+    #Subir brillo y contraste
+    st.session_state['bright'] = st.sidebar.slider( "Brillo" , min_value=-127 , max_value=127 , value=st.session_state['bright'] , step=None , format=None , key=None)
+    st.session_state['contrast'] = st.sidebar.slider( "Contraste" , min_value=-64 , max_value=127 , value=st.session_state['contrast'], step=None , format=None , key=None)
+
+    img  = apply_brightness_contrast(st.session_state['img_prepation'], st.session_state['bright'], st.session_state['contrast'])
+    st.session_state['img_brightness_contrast'] = img
 
 if 'img_brightness_contrast' in st.session_state:
-    if st.sidebar.button('Separar'):
-        # Separate the stains from the IHC image Numpy
-        ihc_hed = rgb2hed(st.session_state['img_brightness_contrast'])
-        null = np.zeros_like(ihc_hed[:, :, 0])
-        #ihc_h = hed2rgb(np.stack((ihc_hed[:, :, 0], null, null), axis=-1))
-        #ihc_e = hed2rgb(np.stack((null, ihc_hed[:, :, 1], null), axis=-1))
-        ihc_d = hed2rgb(np.stack((null, null, ihc_hed[:, :, 2]), axis=-1))
-        #st.image(ihc_h)
-        #st.image(ihc_e)
-        #st.image(ihc_d)
+    st.text("Brillo")
+    st.image(st.session_state['img_brightness_contrast'])
 
-        #Imagen separada, canal marron en PIL
-        pil_image_brown=Image.fromarray((ihc_d * 255).astype(np.uint8))
-        st.session_state['pil_image_brown'] = pil_image_brown
+    # Separate the stains from the IHC image Numpy
+    ihc_hed = rgb2hed(st.session_state['img_brightness_contrast'])
+    null = np.zeros_like(ihc_hed[:, :, 0])
+    #ihc_h = hed2rgb(np.stack((ihc_hed[:, :, 0], null, null), axis=-1))
+    #ihc_e = hed2rgb(np.stack((null, ihc_hed[:, :, 1], null), axis=-1))
+    ihc_d = hed2rgb(np.stack((null, null, ihc_hed[:, :, 2]), axis=-1))
+    #st.image(ihc_h)
+    #st.image(ihc_e)
+    #st.image(ihc_d)
+
+    #Imagen separada, canal marron en PIL
+    pil_image_brown=Image.fromarray((ihc_d * 255).astype(np.uint8))
+    st.session_state['pil_image_brown'] = pil_image_brown
 
 if 'pil_image_brown' in st.session_state:
     st.text("Marron")
@@ -375,6 +376,9 @@ if 'pil_image_brown' in st.session_state:
 
     im = img_as_ubyte(st.session_state['pil_image_brown'])
 
+    #st.text("test")
+    #st.image(im)
+
     params = cv2.SimpleBlobDetector_Params()
 
     params.minThreshold = st.sidebar.slider( "MinThreshold" , min_value=0 , max_value=1000 , value=st.session_state['MinThreshold'] , step=None , format=None , key=None)
@@ -393,6 +397,9 @@ if 'pil_image_brown' in st.session_state:
             
     im_pil = Image.fromarray(im_with_keypoints)
     st.session_state['BlobImage'] = im_pil
+
+    #st.text("test2")
+    #st.image(im_pil)
             
     print("keypoints")
     for keyPoint in keypoints:
