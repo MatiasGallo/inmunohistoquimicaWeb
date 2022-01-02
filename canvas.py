@@ -19,7 +19,7 @@ boxes = []
 
 # Specify canvas parameters in application
 stroke_width = 1
-bg_image = st.sidebar.file_uploader("Image:", type=["png", "jpg"])
+bg_image = st.sidebar.file_uploader("Image:", type=["png", "jpg", "jpeg"])
 
 if 'bright' not in st.session_state:
     st.session_state['bright'] = 64
@@ -40,7 +40,7 @@ if 'Area' not in st.session_state:
     st.session_state['Area'] = 625
 
 if 'Circularidad' not in st.session_state:
-    st.session_state['Circularidad'] = 0.7
+    st.session_state['Circularidad'] = 0.6
 
 def click_event(event, x, y, flags, params):
     if (event == cv2.EVENT_LBUTTONDOWN) or (event==cv2.EVENT_RBUTTONDOWN):
@@ -163,17 +163,18 @@ def regiongrowMediana(imageSrc,epsilon,start_point : list):
         y = pixel[1]
         color.append(image.getpixel( (x , y) ))
 
-    print( color )   
-    print( median(color))
+    #print( color )   
+    #print( median(color))
+    #st.image(image)
 
-    st.image(image)
-    while not Q.isEmpty():
-        
+    while not Q.isEmpty(): 
         #print( median(color))
 
         t = Q.deque()
         x = t[0]
         y = t[1]
+
+        print(x,y)
         
         if x < image.size[0]-1 and \
            abs(  image.getpixel( (x + 1 , y) ) - median(color)  ) <= epsilon :
@@ -268,45 +269,6 @@ def Blob_Detection_Cv2(image):
         print(x)
         print(y)
         print(s)
-
-@st.cache(suppress_st_warning=True)
-def Blob_Detection2_Cv2(image):
-    im = img_as_ubyte(image)
-
-    params = cv2.SimpleBlobDetector_Params()
-    # Change thresholds
-    params.minThreshold = 150
-    params.maxThreshold = 256
-    # Filter by Area.
-    params.filterByArea = True
-    params.minArea = 1500
-    params.maxArea = 10000
-    # Filter by Color (black=0)
-    #params.filterByColor = True
-    #params.blobColor = 0
-    # Filter by Circularity
-    params.filterByCircularity = True
-    params.minCircularity = 0.6
-    #params.maxCircularity = 1
-    # Filter by Convexity
-    params.filterByConvexity = False
-    params.minConvexity = 0.1
-    params.maxConvexity = 1
-    # Filter by InertiaRatio
-    params.filterByInertia = False
-    params.minInertiaRatio = 0
-    params.maxInertiaRatio = 1
-    # Distance Between Blobs
-    params.minDistBetweenBlobs = 0
-    # Do detecting
-    detector = cv2.SimpleBlobDetector_create(params);
-    # find key points for blob detection
-    keypoints = detector.detect(im)
-
-    im_with_keypoints = cv2.drawKeypoints(im, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-            
-    im_pil = Image.fromarray(im_with_keypoints)
-    return im_pil
 
 if bg_image:
     drawing_mode = st.sidebar.selectbox("Drawing tool:", ("line", "rect"))
