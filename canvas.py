@@ -149,6 +149,7 @@ def regiongrowMediana(imageSrc,epsilon,start_point : list):
     
     print(start_point)
     for i in start_point:
+       
         Q.enque(i)
 
     image = imageSrc.convert("L")
@@ -286,6 +287,15 @@ if bg_image:
     img = img_as_ubyte(image)
     RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
+    if 'left' in st.session_state:
+        del st.session_state['left']
+    if 'top' in st.session_state:
+        del st.session_state['top']
+    if 'width' in st.session_state:
+        del st.session_state['width']
+    if 'height' in st.session_state:
+        del st.session_state['height']
+
     if canvas_result.json_data is not None:
         formas=pd.json_normalize(canvas_result.json_data["objects"])
 
@@ -319,6 +329,9 @@ if bg_image:
         st.image(im)
 
         if st.sidebar.button('Recortar'):
+            #Borrar seeds si cambia imagen
+            if 'clicks' in st.session_state:
+                del st.session_state['clicks']
             # plugin='matplotlib'
             skimg = im
             if 'left' in st.session_state:
