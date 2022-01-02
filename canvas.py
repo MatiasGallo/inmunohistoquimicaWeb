@@ -31,10 +31,10 @@ if 'Epsilon' not in st.session_state:
     st.session_state['Epsilon'] = 25
 
 if 'MinThreshold' not in st.session_state:
-    st.session_state['MinThreshold'] = 80
+    st.session_state['MinThreshold'] = 150
 
 if 'MaxThreshold' not in st.session_state:
-    st.session_state['MaxThreshold'] = 500
+    st.session_state['MaxThreshold'] = 256
 
 if 'Area' not in st.session_state:
     st.session_state['Area'] = 625
@@ -53,6 +53,7 @@ def click_event(event, x, y, flags, params):
         cv2.imshow('img', RGB_img)
         st.session_state['clicks'] = valids
 
+@st.cache(suppress_st_warning=True)
 def apply_brightness_contrast(input_img, brightness = 0, contrast = 0):
     if brightness != 0:
         if brightness > 0:
@@ -77,6 +78,7 @@ def apply_brightness_contrast(input_img, brightness = 0, contrast = 0):
 
     return buf
 
+@st.cache(suppress_st_warning=True)
 def regiongrow(imageSrc,epsilon,start_point : list):
 
     Q = Queue()
@@ -140,6 +142,7 @@ def regiongrow(imageSrc,epsilon,start_point : list):
         
     return image
 
+@st.cache(suppress_st_warning=True)
 def regiongrowMediana(imageSrc,epsilon,start_point : list):
     print('Calculando')
     Q = Queue()
@@ -228,6 +231,7 @@ def regiongrowMediana(imageSrc,epsilon,start_point : list):
     #image.save(output + ".JPEG" , "JPEG")
     return image
 
+@st.cache(suppress_st_warning=True)
 def Blob_Detection_Cv2(image):
     #Blob detection
     im = img_as_ubyte(image)
@@ -264,6 +268,45 @@ def Blob_Detection_Cv2(image):
         print(x)
         print(y)
         print(s)
+
+@st.cache(suppress_st_warning=True)
+def Blob_Detection2_Cv2(image):
+    im = img_as_ubyte(image)
+
+    params = cv2.SimpleBlobDetector_Params()
+    # Change thresholds
+    params.minThreshold = 150
+    params.maxThreshold = 256
+    # Filter by Area.
+    params.filterByArea = True
+    params.minArea = 1500
+    params.maxArea = 10000
+    # Filter by Color (black=0)
+    #params.filterByColor = True
+    #params.blobColor = 0
+    # Filter by Circularity
+    params.filterByCircularity = True
+    params.minCircularity = 0.6
+    #params.maxCircularity = 1
+    # Filter by Convexity
+    params.filterByConvexity = False
+    params.minConvexity = 0.1
+    params.maxConvexity = 1
+    # Filter by InertiaRatio
+    params.filterByInertia = False
+    params.minInertiaRatio = 0
+    params.maxInertiaRatio = 1
+    # Distance Between Blobs
+    params.minDistBetweenBlobs = 0
+    # Do detecting
+    detector = cv2.SimpleBlobDetector_create(params);
+    # find key points for blob detection
+    keypoints = detector.detect(im)
+
+    im_with_keypoints = cv2.drawKeypoints(im, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+            
+    im_pil = Image.fromarray(im_with_keypoints)
+    return im_pil
 
 if bg_image:
     drawing_mode = st.sidebar.selectbox("Drawing tool:", ("line", "rect"))
@@ -370,6 +413,8 @@ if 'img_brightness_contrast' in st.session_state:
     #st.image(ihc_e)
     #st.image(ihc_d)
 
+    #st.session_state['ihc_d'] = ihc_d
+
     #Imagen separada, canal marron en PIL
     pil_image_brown=Image.fromarray((ihc_d * 255).astype(np.uint8))
     st.session_state['pil_image_brown'] = pil_image_brown
@@ -424,7 +469,8 @@ if 'pil_image_brown' in st.session_state:
     params.maxThreshold = st.sidebar.slider( "MaxThreshold" , min_value=0 , max_value=2000 , value=st.session_state['MaxThreshold'] , step=None , format=None , key=None)
 
     params.filterByArea = True
-    params.minArea = st.sidebar.slider( "Area" , min_value=0 , max_value=1000 , value=st.session_state['Area'] , step=None , format=None , key=None)
+    params.minArea = st.sidebar.slider( "Area" , min_value=0 , max_value=1500 , value=st.session_state['Area'] , step=None , format=None , key=None)
+    params.maxArea = 10000
 
     params.filterByCircularity = True
     params.minCircularity = st.sidebar.slider( "Circularidad" , min_value=0.0 , max_value=1.0 , value=st.session_state['Circularidad'], step=0.1 , format=None , key=None)
@@ -449,7 +495,7 @@ if 'pil_image_brown' in st.session_state:
         print(x)
         print(y)
         print(s)
-                
+
 if 'BlobImage' in st.session_state:
     st.text("Blob")
     st.image(st.session_state['BlobImage'])
