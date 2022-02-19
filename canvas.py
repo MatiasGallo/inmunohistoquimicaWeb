@@ -289,8 +289,10 @@ if bg_image:
         key="canvas",
     )
 
-    img = img_as_ubyte(image)
+    img = img_as_ubyte(newImage)
     RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    height, width, channels = RGB_img.shape
 
     if 'left' in st.session_state:
         del st.session_state['left']
@@ -317,10 +319,10 @@ if bg_image:
                 inicY = top + y1
                 endY  = top + y2
 
-                startingX = w * (inicX/600)
-                finishX = w * (endX2/600)
-                statingY = h * (inicY/400)
-                finishY = h * (endY/400)
+                startingX = newW * (inicX/600)
+                finishX = newW * (endX2/600)
+                statingY = newH * (inicY/400)
+                finishY = newH * (endY/400)
             
                 cv2.line(RGB_img, pt1=(int(startingX),int(statingY)), pt2=(int(finishX),int(finishY)), color=(255,255,255), thickness=10)
             elif formas['type'][index] == "rect":
@@ -368,12 +370,13 @@ if 'img_brightness_contrast' in st.session_state:
     # Separate the stains from the IHC image Numpy
     ihc_hed = rgb2hed(st.session_state['img_brightness_contrast'])
     null = np.zeros_like(ihc_hed[:, :, 0])
-    #ihc_h = hed2rgb(np.stack((ihc_hed[:, :, 0], null, null), axis=-1))
+    ihc_h = hed2rgb(np.stack((ihc_hed[:, :, 0], null, null), axis=-1))
     #ihc_e = hed2rgb(np.stack((null, ihc_hed[:, :, 1], null), axis=-1))
     ihc_d = hed2rgb(np.stack((null, null, ihc_hed[:, :, 2]), axis=-1))
-    #st.image(ihc_h)
+    #Azul
+    st.image(ihc_h)
     #st.image(ihc_e)
-    #st.image(ihc_d)
+    st.image(ihc_d)
 
     #st.session_state['ihc_d'] = ihc_d
 
@@ -384,38 +387,6 @@ if 'img_brightness_contrast' in st.session_state:
 if 'pil_image_brown' in st.session_state:
     st.text("Marron")
     st.image(st.session_state['pil_image_brown'])
-
-    if st.sidebar.button('Seeds'):
-        st.session_state['clicks'] = []
-
-        imgG = img_as_ubyte(st.session_state['pil_image_brown'])
-        RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
-            
-        cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-        # create switch for ON/OFF functionality
-        #cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
-        cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
-        cv2.imshow('img', RGB_img)
-        cv2.setMouseCallback('img',click_event)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-if 'clicks' in st.session_state and 'pil_image_brown' in st.session_state:
-    st.session_state['Epsilon'] = st.sidebar.slider( "Epsilon" , min_value=1 , max_value=127 , value=st.session_state['Epsilon'] , step=None , format=None , key=None)
-    if st.sidebar.button('Region Grow'):
-
-        with st.spinner('Wait for it...'):
-            regionGrowResult = regiongrowMediana(st.session_state['pil_image_brown'],st.session_state['Epsilon'],st.session_state['clicks'])
-
-            st.session_state['regionGrowResult'] = regionGrowResult
-            #st.image(regionGrowResult)
-
-            #print(regionGrowResult.histogram())
-            #st.bar_chart(regionGrowResult.histogram())
-
-if 'regionGrowResult' in st.session_state:
-    st.text("RegionGrow")
-    st.image(st.session_state['regionGrowResult'])
 
 if 'pil_image_brown' in st.session_state:
     st.sidebar.text("Blob Params")
@@ -461,3 +432,36 @@ if 'pil_image_brown' in st.session_state:
 if 'BlobImage' in st.session_state:
     st.text("Blob")
     st.image(st.session_state['BlobImage'])
+
+if 'pil_image_brown' in st.session_state:
+    if st.sidebar.button('Seeds'):
+        st.session_state['clicks'] = []
+
+        imgG = img_as_ubyte(st.session_state['pil_image_brown'])
+        RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
+            
+        cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+        # create switch for ON/OFF functionality
+        #cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
+        cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
+        cv2.imshow('img', RGB_img)
+        cv2.setMouseCallback('img',click_event)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+if 'clicks' in st.session_state and 'pil_image_brown' in st.session_state:
+    st.session_state['Epsilon'] = st.sidebar.slider( "Epsilon" , min_value=1 , max_value=127 , value=st.session_state['Epsilon'] , step=None , format=None , key=None)
+    if st.sidebar.button('Region Grow'):
+
+        with st.spinner('Wait for it...'):
+            regionGrowResult = regiongrowMediana(st.session_state['pil_image_brown'],st.session_state['Epsilon'],st.session_state['clicks'])
+
+            st.session_state['regionGrowResult'] = regionGrowResult
+            #st.image(regionGrowResult)
+
+            #print(regionGrowResult.histogram())
+            #st.bar_chart(regionGrowResult.histogram())
+
+if 'regionGrowResult' in st.session_state:
+    st.text("RegionGrow")
+    st.image(st.session_state['regionGrowResult'])
