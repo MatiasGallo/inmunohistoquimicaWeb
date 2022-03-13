@@ -344,10 +344,11 @@ if bg_image:
             if 'left' in st.session_state:
                 endSquare=st.session_state['left'] + st.session_state['width']
                 highSquare = st.session_state['top'] + st.session_state['height']
-                inicTop = w * (st.session_state['left']/600)
-                finWidth = w * (endSquare/600)
-                inicHigh = h * (st.session_state['top']/400)
-                finHigh = h * (highSquare/400)
+                inicTop = newW * (st.session_state['left']/600)
+                finWidth = newW * (endSquare/600)
+                inicHigh = newH * (st.session_state['top']/400)
+                finHigh = newH * (highSquare/400)
+
                 cropped = skimg[int(inicHigh):int(finHigh),int(inicTop):int(finWidth)]
                 imgG = img_as_ubyte(cropped)
                 st.session_state['img_prepation'] = imgG
@@ -374,15 +375,19 @@ if 'img_brightness_contrast' in st.session_state:
     #ihc_e = hed2rgb(np.stack((null, ihc_hed[:, :, 1], null), axis=-1))
     ihc_d = hed2rgb(np.stack((null, null, ihc_hed[:, :, 2]), axis=-1))
     #Azul
-    st.image(ihc_h)
+    #st.image(ihc_h)
     #st.image(ihc_e)
-    st.image(ihc_d)
+    #Marron
+    #st.image(ihc_d)
 
     #st.session_state['ihc_d'] = ihc_d
 
     #Imagen separada, canal marron en PIL
     pil_image_brown=Image.fromarray((ihc_d * 255).astype(np.uint8))
     st.session_state['pil_image_brown'] = pil_image_brown
+
+    pil_image_blue=Image.fromarray((ihc_h * 255).astype(np.uint8))
+    st.session_state['pil_image_blue'] = pil_image_blue
 
 if 'pil_image_brown' in st.session_state:
     st.text("Marron")
@@ -441,6 +446,7 @@ if 'pil_image_brown' in st.session_state:
         RGB_img = cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
             
         cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty('img', cv2.WND_PROP_TOPMOST, 1)
         # create switch for ON/OFF functionality
         #cv2.createTrackbar('0 : OFF \n1 : ON', 'img',0,1,switchValid)
         cv2.cvtColor(imgG, cv2.COLOR_BGR2RGB)
