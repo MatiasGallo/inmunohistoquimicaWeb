@@ -3,10 +3,13 @@ import streamlit as st
 import cv2
 from skimage import img_as_ubyte 
 import PIL.ImageDraw as ImageDraw
+from PIL import ImageColor
+import numpy as np
 
 def convertImage(pil_image):
     img = img_as_ubyte(pil_image)
     RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
     return RGB_img
 
 def drawPoligon(clickName, imgName,img):
@@ -37,12 +40,33 @@ def on_mouse(event, x, y, flags, params):
             line_thickness = 2
             cv2.line(RGB_img, last_element, (x, y), (170, 255, 0), thickness=line_thickness)
 
+        value = RGB_img[x,y]
+        print(value)
 
         clicks.append((x,y))
         st.session_state[params[0]] = clicks
         
         cv2.imshow('img', RGB_img)
         
+def checkColor(img, colorMin, colorMax):
+    img = img_as_ubyte(pil_image)
+    frame = img
+
+    st.text("Conversion")
+    st.image(img)
+    st.image(frame)
+
+    # use rgb color picker to set these based on color range you want
+    # (order is BGR not RGB!)
+    lower_brown = np.array(colorMin) # a dark brown
+    upper_brown = np.array(colorMax) # BGR of your brown
+    w,h,c = frame.shape
+    mask = cv2.inRange(frame, lower_brown, upper_brown)
+    num_brown = cv2.countNonZero(mask)
+    perc_brown = num_brown/float(w*h)*100
+
+    print(num_brown)
+    print(perc_brown)
 
 bg_image = st.sidebar.file_uploader("Image:", type=["png", "jpg"])
 
@@ -75,3 +99,11 @@ if (st.sidebar.button('Marcar 3') and RGB_img.all()):
 
 if 'Poligon3' in st.session_state:
     st.image(st.session_state['Poligon3'])
+
+colorMin = st.sidebar.color_picker('Pick A Color min brown', '#6E6E6E')
+minRGB = ImageColor.getcolor(colorMin, "RGB")
+colorMax = st.sidebar.color_picker('Pick A Color max brown', '#8C968C')
+maxRGB = ImageColor.getcolor(colorMax, "RGB")
+
+if (st.sidebar.button('Calcular') and 'Poligon3' in st.session_state):
+    checkColor(st.session_state['Poligon3'], minRGB, maxRGB)
