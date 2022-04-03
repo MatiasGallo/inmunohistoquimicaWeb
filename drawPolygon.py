@@ -30,7 +30,6 @@ def drawPoligon(clickName, imgName,img):
 
     st.session_state[imgName] = pil_image
 
-
 def on_mouse(event, x, y, flags, params):
     if event == cv2.EVENT_LBUTTONDOWN:
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -40,7 +39,7 @@ def on_mouse(event, x, y, flags, params):
             line_thickness = 2
             cv2.line(RGB_img, last_element, (x, y), (170, 255, 0), thickness=line_thickness)
 
-        value = RGB_img[x,y]
+        value = RGB_img[y,x]
         print(value)
 
         clicks.append((x,y))
@@ -75,6 +74,8 @@ if bg_image:
     pil_image = Image.open(bg_image)
     RGB_img = convertImage(pil_image)
     st.image(pil_image)
+
+    st.text(pil_image.size)
 
 if (st.sidebar.button('Marcar 1') and RGB_img.all()):
     if 'Poligon2' in st.session_state:
