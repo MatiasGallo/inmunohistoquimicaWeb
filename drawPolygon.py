@@ -72,8 +72,8 @@ def on_mouse(event, x, y, flags, params):
             line_thickness = 2
             cv2.line(RGB_img, last_element, (x, y), (170, 255, 0), thickness=line_thickness)
 
-        value = RGB_img[y,x]
-        print(value)
+        #value = RGB_img[y,x]
+        #print(value)
 
         clicks.append((x,y))
         st.session_state[params[0]] = clicks
@@ -86,8 +86,8 @@ def on_mouse_color(event, x, y, flags, params):
         cv2.putText(RGB_img, '.' , ((x),y), font,1, (170, 255, 0), 2)
 
         value = img[y,x]
-        print(y,x)
-        print(value)
+        #print(y,x)
+        #print(value)
 
         st.session_state[params[0]] = value
         
@@ -97,17 +97,15 @@ def checkColor(img, colorMin, colorMax):
     img = img_as_ubyte(img)
     frame = img
 
-    st.image(frame)
-
     # use rgb color picker to set these based on color range you want
     # (order is BGR not RGB!)
     lower_brown = np.array(colorMin) # a dark brown
     upper_brown = np.array(colorMax) # BGR of your brown
 
-    print("RGB")
-    print(lower_brown)
-    print(upper_brown)
-
+    #print("RGB")
+    #print(lower_brown)
+    #print(upper_brown)
+    '''
     print("HSV")
     hsv_min = rgb_to_hsv(lower_brown[0],lower_brown[1],lower_brown[2])
     hsv_max = rgb_to_hsv(upper_brown[0],upper_brown[1],upper_brown[2])
@@ -117,11 +115,11 @@ def checkColor(img, colorMin, colorMax):
 
     print(np_lower_brown)
     print(np_upper_brown)
-
+    '''
     w,h,c = frame.shape
-    print("Frame")
-    print(w)
-    print(h)
+    #print("Frame")
+    #print(w)
+    #print(h)
     mask = cv2.inRange(frame, lower_brown, upper_brown)
     num_brown = cv2.countNonZero(mask)
     perc_brown = num_brown/float(w*h)*100
@@ -140,43 +138,29 @@ if bg_image:
     RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     st.image(pil_image)
 
-if (st.sidebar.button('Marcar 1') and RGB_img is not None):
-    if 'Poligon2' in st.session_state:
-        del st.session_state['Poligon2']
+if (st.sidebar.button('Agregar Poligono') and RGB_img is not None):
+    if 'Poligon1' in st.session_state:
+        pil_image = st.session_state['Poligon1'].copy()
+    RGB_img = convertImage(pil_image)
     
-    drawPoligon('clicks','Poligon1', RGB_img)
+    drawPoligon('clicks1','Poligon1', RGB_img)
 
 if 'Poligon1' in st.session_state:
     st.image(st.session_state['Poligon1'])
 
-if (st.sidebar.button('Marcar 2') and RGB_img is not None and 'Poligon1' in st.session_state):
-    pil_image = st.session_state['Poligon1'].copy()
-    RGB_img = convertImage(pil_image)
-    
-    drawPoligon('clicks2','Poligon2', RGB_img)
-
-if 'Poligon2' in st.session_state:
-    st.image(st.session_state['Poligon2'])
-
-if (st.sidebar.button('Marcar 3') and RGB_img is not None):
-    drawPoligon('clicks','Poligon3', RGB_img)
-
-if 'Poligon3' in st.session_state:
-    st.image(st.session_state['Poligon3'])
-
 #colorMin = st.sidebar.color_picker('Pick A Color min brown', '#6E6E6E')
-if (st.sidebar.button('Color 1') and RGB_img is not None):
+if (st.sidebar.button('Color Minimo (claro)') and RGB_img is not None):
     pick_Color("minRGB")
 
 if 'minRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['minRGB'][0],st.session_state['minRGB'][1],st.session_state['minRGB'][2])))
 
 #colorMax = st.sidebar.color_picker('Pick A Color max brown', '#8C968C')
-if (st.sidebar.button('Color 2') and RGB_img is not None):
+if (st.sidebar.button('Color Maximo (oscuro)') and RGB_img is not None):
     pick_Color("maxRGB")
 
 if 'maxRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
 
-if (st.sidebar.button('Calcular') and 'Poligon3' in st.session_state):
-    checkColor(st.session_state['Poligon3'], st.session_state['maxRGB'], st.session_state['minRGB'])
+if (st.sidebar.button('Calcular') and 'Poligon1' in st.session_state and 'maxRGB' in st.session_state and 'minRGB' in st.session_state):
+    checkColor(st.session_state['Poligon1'], st.session_state['maxRGB'], st.session_state['minRGB'])
