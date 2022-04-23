@@ -75,7 +75,6 @@ def drawPoligon(clickName, imgName,img):
 
     if clickName in st.session_state:
         clicks = list(st.session_state[clickName])
-        print(len(clicks))
         if len(clicks) > 1:
             draw = ImageDraw.Draw(pil_image)
             draw.polygon((st.session_state[clickName]), fill="#FFFFFF")
@@ -107,9 +106,6 @@ def on_mouse(event, x, y, flags, params):
             line_thickness = 2
             cv2.line(RGB_img, last_element, (x, y), (170, 255, 0), thickness=line_thickness)
 
-        #value = RGB_img[y,x]
-        #print(value)
-
         clicks.append((x,y))
         st.session_state[params[0]] = clicks
         
@@ -121,8 +117,6 @@ def on_mouse_color(event, x, y, flags, params):
         cv2.putText(st.session_state['RGB_img'], '.' , ((x),y), font,1, (170, 255, 0), 2)
 
         value = img[y,x]
-        #print(y,x)
-        #print(value)
 
         st.session_state[params[0]] = value
         
@@ -161,33 +155,22 @@ def checkColorHSV(img, colorMin, colorMax):
     img = img_as_ubyte(img)
     hsvFrame = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    #st.image(hsvFrame)
-
     lower_brown = np.array(colorMin)
     upper_brown = np.array(colorMax)
 
-    print("HSV")
+    #("HSV")
     hsv_min = rgb_to_hsv(lower_brown[0],lower_brown[1],lower_brown[2])
     hsv_max = rgb_to_hsv(upper_brown[0],upper_brown[1],upper_brown[2])
 
-    np_lower_brown = np.array(hsv_min)
-    np_upper_brown = np.array(hsv_max)
-
-    print(np_lower_brown)
-    print(np_upper_brown)
-
-    #print("Conversion HSV")
+    #("Conversion HSV")
     new_hsv_min = cv2_hsvChange(hsv_min)
     new_hsv_max = cv2_hsvChange(hsv_max)
 
-    #print("minToMax_HSV")
+    #("minToMax_HSV")
     new_hsv_min,new_hsv_max = minToMax_HSV(new_hsv_min,new_hsv_max)
 
     np_conv_lower_brown = np.array(new_hsv_min)
     np_conv_upper_brown = np.array(new_hsv_max)
-
-    print(np_conv_lower_brown)
-    print(np_conv_upper_brown)
 
     w,h,c = img.shape
     mask = cv2.inRange(hsvFrame, np_conv_lower_brown, np_conv_upper_brown)
@@ -206,16 +189,8 @@ def checkColor(img, colorMin, colorMax):
     lower_brown = np.array(colorMin)
     upper_brown = np.array(colorMax)
 
-    #print("RGB")
-    #print(colorMin)
-    #print(colorMax)
-
     w,h,c = frame.shape
-    #print("Frame")
-    #print(w)
-    #print(h)
     mask = cv2.inRange(frame, lower_brown, upper_brown)
-    #mask = cv2.inRange(hsvFrame, np_conv_lower_brown, np_conv_upper_brown)
     num_brown = cv2.countNonZero(mask)
     perc_brown = num_brown/float(w*h)*100
 
