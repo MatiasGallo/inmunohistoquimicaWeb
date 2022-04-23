@@ -93,34 +93,69 @@ def on_mouse_color(event, x, y, flags, params):
         
         cv2.imshow('img', RGB_img)
 
-def checkColor(img, colorMin, colorMax):
+def cv2_hsvChange(hsvSrc):
+    #(H/2, (S/100) * 255, (V/100) * 255) 
+    newH = hsvSrc[0] / 2
+    newS = (hsvSrc[1]/100) * 255
+    newV = (hsvSrc[2]/100) * 255
+    return (newH,newS,newV)
+
+def minToMax_HSV(hsvMinSrc,hsvMaxSrc):
+    hsvMin = list(hsvMinSrc)
+    hsvMax = list(hsvMaxSrc)
+
+    if hsvMin[0] > hsvMax[0]:
+        temp = hsvMin[0]
+        hsvMin[0] = hsvMax[0]
+        hsvMax[0] = temp
+    if hsvMin[1] > hsvMax[1]:
+        temp = hsvMin[1]
+        hsvMin[1] = hsvMax[1]
+        hsvMax[1] = temp
+    if hsvMin[2] > hsvMax[2]:
+        temp = hsvMin[2]
+        hsvMin[2] = hsvMax[2]
+        hsvMax[2] = temp
+
+    hsvMinSrc = tuple(hsvMin)
+    hsvMaxSrc = tuple(hsvMax)
+
+    return (hsvMinSrc, hsvMaxSrc)
+
+def checkColorHSV(img, colorMin, colorMax):
     img = img_as_ubyte(img)
-    frame = img
+    hsvFrame = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-    # use rgb color picker to set these based on color range you want
-    # (order is BGR not RGB!)
-    lower_brown = np.array(colorMin) # a dark brown
-    upper_brown = np.array(colorMax) # BGR of your brown
+    #st.image(hsvFrame)
 
-    #print("RGB")
-    #print(lower_brown)
-    #print(upper_brown)
-    '''
+    lower_brown = np.array(colorMin)
+    upper_brown = np.array(colorMax)
+
     print("HSV")
     hsv_min = rgb_to_hsv(lower_brown[0],lower_brown[1],lower_brown[2])
     hsv_max = rgb_to_hsv(upper_brown[0],upper_brown[1],upper_brown[2])
 
-    np_lower_brown = np.array(hsv_min) # a dark brown
-    np_upper_brown = np.array(hsv_max) # BGR of your brown
+    np_lower_brown = np.array(hsv_min)
+    np_upper_brown = np.array(hsv_max)
 
     print(np_lower_brown)
     print(np_upper_brown)
-    '''
-    w,h,c = frame.shape
-    #print("Frame")
-    #print(w)
-    #print(h)
-    mask = cv2.inRange(frame, lower_brown, upper_brown)
+
+    #print("Conversion HSV")
+    new_hsv_min = cv2_hsvChange(hsv_min)
+    new_hsv_max = cv2_hsvChange(hsv_max)
+
+    #print("minToMax_HSV")
+    new_hsv_min,new_hsv_max = minToMax_HSV(new_hsv_min,new_hsv_max)
+
+    np_conv_lower_brown = np.array(new_hsv_min)
+    np_conv_upper_brown = np.array(new_hsv_max)
+
+    print(np_conv_lower_brown)
+    print(np_conv_upper_brown)
+
+    w,h,c = img.shape
+    mask = cv2.inRange(hsvFrame, np_conv_lower_brown, np_conv_upper_brown)
     num_brown = cv2.countNonZero(mask)
     perc_brown = num_brown/float(w*h)*100
     st.text("Total pixels")
@@ -128,6 +163,34 @@ def checkColor(img, colorMin, colorMax):
     st.text("Values")
     st.text(num_brown)
     st.text(perc_brown)
+
+def checkColor(img, colorMin, colorMax):
+    img = img_as_ubyte(img)
+    frame = img
+
+    lower_brown = np.array(colorMin)
+    upper_brown = np.array(colorMax)
+
+    #print("RGB")
+    #print(lower_brown)
+    #print(upper_brown)
+
+    w,h,c = frame.shape
+    #print("Frame")
+    #print(w)
+    #print(h)
+    mask = cv2.inRange(frame, lower_brown, upper_brown)
+    #mask = cv2.inRange(hsvFrame, np_conv_lower_brown, np_conv_upper_brown)
+    num_brown = cv2.countNonZero(mask)
+    perc_brown = num_brown/float(w*h)*100
+    st.text("Total pixels")
+    st.text(w*h)
+    st.text("Values")
+    st.text(num_brown)
+    st.text(perc_brown)
+
+    result = cv2.bitwise_and(frame, frame, mask=mask)
+    st.image(result)
 
 bg_image = st.sidebar.file_uploader("Image:", type=["png", "jpg"])
 
@@ -162,5 +225,5 @@ if (st.sidebar.button('Color Maximo (oscuro)') and RGB_img is not None):
 if 'maxRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
 
-if (st.sidebar.button('Calcular') and 'Poligon1' in st.session_state and 'maxRGB' in st.session_state and 'minRGB' in st.session_state):
+if (st.sidebar.button('Calcular') and 'Poligon1' in st.session_state and 'minRGB' in st.session_state):
     checkColor(st.session_state['Poligon1'], st.session_state['maxRGB'], st.session_state['minRGB'])
