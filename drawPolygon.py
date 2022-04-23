@@ -6,6 +6,16 @@ import PIL.ImageDraw as ImageDraw
 from PIL import ImageColor
 import numpy as np
 
+if ('minRGB' not in st.session_state):
+    st.session_state['minRGB']=np.array([255, 255, 255], dtype=np.uint8)
+
+if ('maxRGB' not in st.session_state):
+    st.session_state['maxRGB']=np.array([0, 0, 0], dtype=np.uint8)
+
+def cleanState():
+    if 'Poligon1' in st.session_state:
+        del st.session_state['Poligon1']
+
 def rgb_to_hsv(r, g, b):
     r, g, b = r/255.0, g/255.0, b/255.0
     mx = max(r, g, b)
@@ -171,9 +181,9 @@ def checkColor(img, colorMin, colorMax):
     lower_brown = np.array(colorMin)
     upper_brown = np.array(colorMax)
 
-    #print("RGB")
-    #print(lower_brown)
-    #print(upper_brown)
+    print("RGB")
+    print(colorMin)
+    print(colorMax)
 
     w,h,c = frame.shape
     #print("Frame")
@@ -200,6 +210,8 @@ if bg_image:
     img = img_as_ubyte(pil_image)
     RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     st.image(pil_image)
+else:
+    print("test")
 
 if (st.sidebar.button('Agregar Poligono') and RGB_img is not None):
     if 'Poligon1' in st.session_state:
@@ -211,14 +223,12 @@ if (st.sidebar.button('Agregar Poligono') and RGB_img is not None):
 if 'Poligon1' in st.session_state:
     st.image(st.session_state['Poligon1'])
 
-#colorMin = st.sidebar.color_picker('Pick A Color min brown', '#6E6E6E')
 if (st.sidebar.button('Color Minimo (claro)') and RGB_img is not None):
     pick_Color("minRGB")
 
 if 'minRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['minRGB'][0],st.session_state['minRGB'][1],st.session_state['minRGB'][2])))
 
-#colorMax = st.sidebar.color_picker('Pick A Color max brown', '#8C968C')
 if (st.sidebar.button('Color Maximo (oscuro)') and RGB_img is not None):
     pick_Color("maxRGB")
 
