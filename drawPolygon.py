@@ -3,14 +3,20 @@ import streamlit as st
 import cv2
 from skimage import img_as_ubyte 
 import PIL.ImageDraw as ImageDraw
-from PIL import ImageColor
 import numpy as np
+import pandas as pd
 
 if ('minRGB' not in st.session_state):
     st.session_state['minRGB']=np.array([255, 255, 255], dtype=np.uint8)
 
 if ('maxRGB' not in st.session_state):
     st.session_state['maxRGB']=np.array([0, 0, 0], dtype=np.uint8)
+
+if ('dataFrame_name' not in st.session_state):
+    st.session_state['dataFrame_name'] = {}
+    st.session_state['dataFrame_total'] = {}
+    st.session_state['dataFrame_total_encontrados'] = {}
+    st.session_state['dataFrame_perc_encontrados'] = {}
 
 def cleanState():
     if 'imgPoligono' in st.session_state:
@@ -220,6 +226,23 @@ def checkColor(img, colorMin, colorMax):
     st.session_state['percDetectado'] = perc_brown
     st.session_state['ImagenResultado'] = result
 
+def convert_df():
+    d = {
+     'Nombre': st.session_state['dataFrame_name'],
+     'Total Pixeles': st.session_state['dataFrame_total'],
+     'Pixeles Detectados': st.session_state['dataFrame_total_encontrados'],
+     '% Pixeles Detectados': st.session_state['dataFrame_perc_encontrados']
+    }
+
+    df = pd.DataFrame(data=d)
+    return df.to_csv(index=False).encode('utf-8')
+
+def add_to_List(sesion_name, value):
+    list_State = st.session_state[sesion_name]
+    result_list = list(list_State)
+    result_list.append(value)
+    st.session_state[sesion_name] = result_list
+
 bg_image = st.sidebar.file_uploader("Image:", type=["png", "jpg"])
 
 clicks = []
@@ -265,3 +288,26 @@ if 'ImagenResultado' in st.session_state:
     st.text(st.session_state['percDetectado'])
 
     st.image(st.session_state['ImagenResultado'])
+
+if st.sidebar.button('Iniciar Reporte'):
+    st.session_state['dataFrame_name'] = {}
+    st.session_state['dataFrame_total'] = {}
+    st.session_state['dataFrame_total_encontrados'] = {}
+    st.session_state['dataFrame_perc_encontrados'] = {}
+    st.sidebar.success('Reporte Iniciado')
+
+if st.sidebar.button('Agregar Dato'):
+    if 'ImagenResultado' in st.session_state:
+        add_to_List('dataFrame_name', bg_image.name)
+        add_to_List('dataFrame_total', st.session_state['totalPixeles'])
+        add_to_List('dataFrame_total_encontrados', st.session_state['cantDetectada'])
+        add_to_List('dataFrame_perc_encontrados', st.session_state['percDetectado'])
+        st.sidebar.success('Dato añadido')
+
+st.sidebar.download_button(
+   "Descargar reporte",
+   convert_df(),
+   "Reporte.csv",
+   "text/csv",
+   key='download-csv'
+)
