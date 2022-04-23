@@ -13,8 +13,20 @@ if ('maxRGB' not in st.session_state):
     st.session_state['maxRGB']=np.array([0, 0, 0], dtype=np.uint8)
 
 def cleanState():
-    if 'Poligon1' in st.session_state:
-        del st.session_state['Poligon1']
+    if 'imgPoligono' in st.session_state:
+        del st.session_state['imgPoligono']
+    if 'totalPixeles' in st.session_state:
+        del st.session_state['totalPixeles']
+    if 'cantDetectada' in st.session_state:
+        del st.session_state['cantDetectada']
+    if 'percDetectado' in st.session_state:
+        del st.session_state['percDetectado']
+    if 'ImagenResultado' in st.session_state:
+        del st.session_state['ImagenResultado']
+    if 'clicksList' in st.session_state:
+        del st.session_state['clicksList']
+    if 'RGB_img' in st.session_state:
+        del st.session_state['RGB_img']
 
 def rgb_to_hsv(r, g, b):
     r, g, b = r/255.0, g/255.0, b/255.0
@@ -55,20 +67,27 @@ def drawPoligon(clickName, imgName,img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    draw = ImageDraw.Draw(pil_image)
-    draw.polygon((st.session_state[clickName]), fill="#FFFFFF")
+    if clickName in st.session_state:
+        clicks = list(st.session_state[clickName])
+        print(len(clicks))
+        if len(clicks) > 1:
+            draw = ImageDraw.Draw(pil_image)
+            draw.polygon((st.session_state[clickName]), fill="#FFFFFF")
+            st.session_state[imgName] = pil_image
+        else:
+            st.warning("No se agregaron puntos suficientes / la imagen no se afecto")
+    else:
+        st.warning("No se detecto ningun punto / la imagen no se afecto")
 
-    st.session_state[imgName] = pil_image
-
-def pick_Color(clickName):
+def pick_Color(clickName, RGB_img):
     if clickName in st.session_state:
         del st.session_state[clickName]
     params = [clickName]
 
     cv2.namedWindow('img', cv2.WINDOW_NORMAL)
     cv2.setWindowProperty('img', cv2.WND_PROP_TOPMOST, 1)
-    cv2.cvtColor(RGB_img, cv2.COLOR_BGR2RGB)
-    cv2.imshow('img', RGB_img)
+    cv2.cvtColor(st.session_state['RGB_img'], cv2.COLOR_BGR2RGB)
+    cv2.imshow('img', st.session_state['RGB_img'])
     cv2.setMouseCallback('img',on_mouse_color,params)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
@@ -93,7 +112,7 @@ def on_mouse(event, x, y, flags, params):
 def on_mouse_color(event, x, y, flags, params):
     if event == cv2.EVENT_LBUTTONDOWN:
         font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(RGB_img, '.' , ((x),y), font,1, (170, 255, 0), 2)
+        cv2.putText(st.session_state['RGB_img'], '.' , ((x),y), font,1, (170, 255, 0), 2)
 
         value = img[y,x]
         #print(y,x)
@@ -101,7 +120,7 @@ def on_mouse_color(event, x, y, flags, params):
 
         st.session_state[params[0]] = value
         
-        cv2.imshow('img', RGB_img)
+        cv2.imshow('img', st.session_state['RGB_img'])
 
 def cv2_hsvChange(hsvSrc):
     #(H/2, (S/100) * 255, (V/100) * 255) 
@@ -181,9 +200,9 @@ def checkColor(img, colorMin, colorMax):
     lower_brown = np.array(colorMin)
     upper_brown = np.array(colorMax)
 
-    print("RGB")
-    print(colorMin)
-    print(colorMax)
+    #print("RGB")
+    #print(colorMin)
+    #print(colorMax)
 
     w,h,c = frame.shape
     #print("Frame")
@@ -193,14 +212,13 @@ def checkColor(img, colorMin, colorMax):
     #mask = cv2.inRange(hsvFrame, np_conv_lower_brown, np_conv_upper_brown)
     num_brown = cv2.countNonZero(mask)
     perc_brown = num_brown/float(w*h)*100
-    st.text("Total pixels")
-    st.text(w*h)
-    st.text("Values")
-    st.text(num_brown)
-    st.text(perc_brown)
 
     result = cv2.bitwise_and(frame, frame, mask=mask)
-    st.image(result)
+
+    st.session_state['totalPixeles'] = w*h
+    st.session_state['cantDetectada'] = num_brown
+    st.session_state['percDetectado'] = perc_brown
+    st.session_state['ImagenResultado'] = result
 
 bg_image = st.sidebar.file_uploader("Image:", type=["png", "jpg"])
 
@@ -208,32 +226,42 @@ clicks = []
 if bg_image:
     pil_image = Image.open(bg_image)
     img = img_as_ubyte(pil_image)
-    RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    st.session_state['RGB_img'] = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     st.image(pil_image)
+    if 'imgPoligono' not in st.session_state:
+        st.session_state['imgPoligono'] = pil_image
 else:
-    print("test")
+    cleanState()
 
-if (st.sidebar.button('Agregar Poligono') and RGB_img is not None):
-    if 'Poligon1' in st.session_state:
-        pil_image = st.session_state['Poligon1'].copy()
-    RGB_img = convertImage(pil_image)
-    
-    drawPoligon('clicks1','Poligon1', RGB_img)
+if (st.sidebar.button('Agregar Poligono')):
+    if 'imgPoligono' in st.session_state:
+        pil_image = st.session_state['imgPoligono'].copy()
+        RGB_img = convertImage(pil_image)
+        drawPoligon('clicksList','imgPoligono', RGB_img)
 
-if 'Poligon1' in st.session_state:
-    st.image(st.session_state['Poligon1'])
+if 'imgPoligono' in st.session_state:
+    st.image(st.session_state['imgPoligono'])
 
-if (st.sidebar.button('Color Minimo (claro)') and RGB_img is not None):
-    pick_Color("minRGB")
+if (st.sidebar.button('Color Minimo (claro)') and 'RGB_img' in st.session_state):
+    pick_Color("minRGB", st.session_state['RGB_img'])
 
 if 'minRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['minRGB'][0],st.session_state['minRGB'][1],st.session_state['minRGB'][2])))
 
-if (st.sidebar.button('Color Maximo (oscuro)') and RGB_img is not None):
-    pick_Color("maxRGB")
+if (st.sidebar.button('Color Maximo (oscuro)') and 'RGB_img' in st.session_state):
+    pick_Color("maxRGB", st.session_state['RGB_img'])
 
 if 'maxRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
 
-if (st.sidebar.button('Calcular') and 'Poligon1' in st.session_state and 'minRGB' in st.session_state):
-    checkColor(st.session_state['Poligon1'], st.session_state['maxRGB'], st.session_state['minRGB'])
+if (st.sidebar.button('Calcular') and 'imgPoligono' in st.session_state and 'minRGB' in st.session_state):
+    checkColor(st.session_state['imgPoligono'], st.session_state['maxRGB'], st.session_state['minRGB'])
+
+if 'ImagenResultado' in st.session_state:
+    st.text("Total pixels")
+    st.text(st.session_state['totalPixeles'])
+    st.text("Values")
+    st.text(st.session_state['cantDetectada'])
+    st.text(st.session_state['percDetectado'])
+
+    st.image(st.session_state['ImagenResultado'])
