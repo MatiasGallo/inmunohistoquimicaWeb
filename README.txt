@@ -14,6 +14,8 @@ Scripts\activate
 To deactivate:
 deactivate
 
+To install package:
+pip install -r requirements.txt
 
 To run:
 streamlit run canvas.py
