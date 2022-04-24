@@ -225,6 +225,7 @@ if bg_image:
     pil_image = Image.open(bg_image)
     img = img_as_ubyte(pil_image)
     st.session_state['RGB_img'] = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Elegida</h2>", unsafe_allow_html=True)
     st.image(pil_image)
     if 'imgPoligono' not in st.session_state:
         st.session_state['imgPoligono'] = pil_image
@@ -238,6 +239,7 @@ if (st.sidebar.button('Agregar Poligono')):
         drawPoligon('clicksList','imgPoligono', RGB_img)
 
 if 'imgPoligono' in st.session_state:
+    st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Recortada</h2>", unsafe_allow_html=True)
     st.image(st.session_state['imgPoligono'])
 
 if (st.sidebar.button('Color Minimo (claro)') and 'RGB_img' in st.session_state):
@@ -256,13 +258,14 @@ if (st.sidebar.button('Calcular') and 'imgPoligono' in st.session_state and 'min
     checkColor(st.session_state['imgPoligono'], st.session_state['maxRGB'], st.session_state['minRGB'])
 
 if 'ImagenResultado' in st.session_state:
-    st.text("Total pixels")
-    st.text(st.session_state['totalPixeles'])
-    st.text("Values")
-    st.text(st.session_state['cantDetectada'])
-    st.text(st.session_state['percDetectado'])
-
+    st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Resultado</h2>", unsafe_allow_html=True)
     st.image(st.session_state['ImagenResultado'])
+    st.markdown("<h2 style='text-align: center; color: grey;'>Resultados</h2>", unsafe_allow_html=True)
+    st.markdown("<h5 style='text-align: center; color: grey;'>" + "Total pixels: " + str(st.session_state['totalPixeles']) +"</h5>", unsafe_allow_html=True)
+    st.markdown("<h5 style='text-align: center; color: grey;'>" + "Pixels detectados: " + str(st.session_state['cantDetectada']) +"</h5>", unsafe_allow_html=True)
+    st.markdown("<h5 style='text-align: center; color: grey;'>" + "% detectados: " + str(st.session_state['percDetectado']) +"</h5>", unsafe_allow_html=True)
+
+st.sidebar.text("---------------------------------")
 
 if st.sidebar.button('Iniciar Reporte'):
     st.session_state['dataFrame_name'] = {}
