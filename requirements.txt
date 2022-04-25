@@ -1,5 +1,4 @@
 matplotlib==3.5.0
-mayavi==4.7.4
 networkx==2.5.1
 numpy==1.21.4
 opencv_python_headless==4.5.5.64
