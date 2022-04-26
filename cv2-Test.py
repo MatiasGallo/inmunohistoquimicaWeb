@@ -6,7 +6,6 @@ import numpy as np
 
 import os
 os.environ['DISPLAY'] = ':0'
-os.putenv('DISPLAY', ':0.0')
 
 def on_mouse(event, x, y, flags, params):
     print('mouse')
