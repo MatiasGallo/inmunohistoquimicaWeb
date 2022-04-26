@@ -4,6 +4,9 @@ import cv2
 from skimage import img_as_ubyte 
 import numpy as np
 
+import os
+os.environ['DISPLAY'] = ':0'
+
 def on_mouse(event, x, y, flags, params):
     print('mouse')
     if event == cv2.EVENT_LBUTTONDOWN:
