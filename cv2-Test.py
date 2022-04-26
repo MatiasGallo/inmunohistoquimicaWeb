@@ -5,7 +5,7 @@ from skimage import img_as_ubyte
 import numpy as np
 
 import os
-os.environ['DISPLAY'] = ':0'
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 def on_mouse(event, x, y, flags, params):
     print('mouse')
