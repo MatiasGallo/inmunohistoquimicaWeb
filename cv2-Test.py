@@ -18,6 +18,7 @@ if bg_image:
     pil_image = Image.open(bg_image)
     img = img_as_ubyte(pil_image)
     RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    cv2.imshow('img', RGB_img)
 
 if st.sidebar.button('1'):
     cv2.cvtColor(RGB_img, cv2.COLOR_BGR2RGB)
