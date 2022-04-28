@@ -90,7 +90,7 @@ if bg_image:
         fill_color="rgba(255, 165, 0, 0)",
         stroke_width=stroke_width,
         background_image=pil_image if bg_image else None,
-        update_streamlit='false',
+        update_streamlit='true',
         drawing_mode=drawing_mode,
         #Default hight 400
         #Default width 600
@@ -134,7 +134,7 @@ if bg_image:
         stroke_color="rgba(170, 255, 0, 0.8)",
         background_image=pil_image if bg_image else None,
         stroke_width = 1,
-        update_streamlit='false',
+        update_streamlit='true',
         drawing_mode="point",
         point_display_radius=1,
         #Default hight 400
