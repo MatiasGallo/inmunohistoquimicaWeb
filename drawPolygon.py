@@ -2,9 +2,13 @@ from PIL import Image
 import streamlit as st
 import cv2
 from skimage import img_as_ubyte 
+from streamlit_drawable_canvas import st_canvas
 import PIL.ImageDraw as ImageDraw
 import numpy as np
 import pandas as pd
+
+if ('RGB_type' not in st.session_state):
+    st.session_state['RGB_type']=1
 
 if ('minRGB' not in st.session_state):
     st.session_state['minRGB']=np.array([255, 255, 255], dtype=np.uint8)
@@ -29,158 +33,6 @@ def cleanState():
         del st.session_state['percDetectado']
     if 'ImagenResultado' in st.session_state:
         del st.session_state['ImagenResultado']
-    if 'clicksList' in st.session_state:
-        del st.session_state['clicksList']
-    if 'RGB_img' in st.session_state:
-        del st.session_state['RGB_img']
-
-def rgb_to_hsv(r, g, b):
-    r, g, b = r/255.0, g/255.0, b/255.0
-    mx = max(r, g, b)
-    mn = min(r, g, b)
-    df = mx-mn
-    if mx == mn:
-        h = 0
-    elif mx == r:
-        h = (60 * ((g-b)/df) + 360) % 360
-    elif mx == g:
-        h = (60 * ((b-r)/df) + 120) % 360
-    elif mx == b:
-        h = (60 * ((r-g)/df) + 240) % 360
-    if mx == 0:
-        s = 0
-    else:
-        s = (df/mx)*100
-    v = mx*100
-    return [h, s, v]
-
-def convertImage(pil_image):
-    img = img_as_ubyte(pil_image)
-    RGB_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    
-    return RGB_img
-
-def drawPoligon(clickName, imgName,img):
-    if clickName in st.session_state:
-        del st.session_state[clickName]
-    params = [clickName]
-
-    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-    cv2.setWindowProperty('img', cv2.WND_PROP_TOPMOST, 1)
-    cv2.cvtColor(RGB_img, cv2.COLOR_BGR2RGB)
-    cv2.imshow('img', RGB_img)
-    cv2.setMouseCallback('img',on_mouse,params)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-    if clickName in st.session_state:
-        clicks = list(st.session_state[clickName])
-        if len(clicks) > 1:
-            draw = ImageDraw.Draw(pil_image)
-            draw.polygon((st.session_state[clickName]), fill="#FFFFFF")
-            st.session_state[imgName] = pil_image
-        else:
-            st.warning("No se agregaron puntos suficientes / la imagen no se afecto")
-    else:
-        st.warning("No se detecto ningun punto / la imagen no se afecto")
-
-def pick_Color(clickName, RGB_img):
-    if clickName in st.session_state:
-        del st.session_state[clickName]
-    params = [clickName]
-
-    cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-    cv2.setWindowProperty('img', cv2.WND_PROP_TOPMOST, 1)
-    cv2.cvtColor(st.session_state['RGB_img'], cv2.COLOR_BGR2RGB)
-    cv2.imshow('img', st.session_state['RGB_img'])
-    cv2.setMouseCallback('img',on_mouse_color,params)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-def on_mouse(event, x, y, flags, params):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(RGB_img, '.' , ((x-5),y), font,1, (170, 255, 0), 2)
-        if clicks:
-            last_element = clicks[-1]
-            line_thickness = 2
-            cv2.line(RGB_img, last_element, (x, y), (170, 255, 0), thickness=line_thickness)
-
-        clicks.append((x,y))
-        st.session_state[params[0]] = clicks
-        
-        cv2.imshow('img', RGB_img)
-
-def on_mouse_color(event, x, y, flags, params):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(st.session_state['RGB_img'], '.' , ((x),y), font,1, (170, 255, 0), 2)
-
-        value = img[y,x]
-
-        st.session_state[params[0]] = value
-        
-        cv2.imshow('img', st.session_state['RGB_img'])
-
-def cv2_hsvChange(hsvSrc):
-    #(H/2, (S/100) * 255, (V/100) * 255) 
-    newH = hsvSrc[0] / 2
-    newS = (hsvSrc[1]/100) * 255
-    newV = (hsvSrc[2]/100) * 255
-    return (newH,newS,newV)
-
-def minToMax_HSV(hsvMinSrc,hsvMaxSrc):
-    hsvMin = list(hsvMinSrc)
-    hsvMax = list(hsvMaxSrc)
-
-    if hsvMin[0] > hsvMax[0]:
-        temp = hsvMin[0]
-        hsvMin[0] = hsvMax[0]
-        hsvMax[0] = temp
-    if hsvMin[1] > hsvMax[1]:
-        temp = hsvMin[1]
-        hsvMin[1] = hsvMax[1]
-        hsvMax[1] = temp
-    if hsvMin[2] > hsvMax[2]:
-        temp = hsvMin[2]
-        hsvMin[2] = hsvMax[2]
-        hsvMax[2] = temp
-
-    hsvMinSrc = tuple(hsvMin)
-    hsvMaxSrc = tuple(hsvMax)
-
-    return (hsvMinSrc, hsvMaxSrc)
-
-def checkColorHSV(img, colorMin, colorMax):
-    img = img_as_ubyte(img)
-    hsvFrame = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-    lower_brown = np.array(colorMin)
-    upper_brown = np.array(colorMax)
-
-    #("HSV")
-    hsv_min = rgb_to_hsv(lower_brown[0],lower_brown[1],lower_brown[2])
-    hsv_max = rgb_to_hsv(upper_brown[0],upper_brown[1],upper_brown[2])
-
-    #("Conversion HSV")
-    new_hsv_min = cv2_hsvChange(hsv_min)
-    new_hsv_max = cv2_hsvChange(hsv_max)
-
-    #("minToMax_HSV")
-    new_hsv_min,new_hsv_max = minToMax_HSV(new_hsv_min,new_hsv_max)
-
-    np_conv_lower_brown = np.array(new_hsv_min)
-    np_conv_upper_brown = np.array(new_hsv_max)
-
-    w,h,c = img.shape
-    mask = cv2.inRange(hsvFrame, np_conv_lower_brown, np_conv_upper_brown)
-    num_brown = cv2.countNonZero(mask)
-    perc_brown = num_brown/float(w*h)*100
-    st.text("Total pixels")
-    st.text(w*h)
-    st.text("Values")
-    st.text(num_brown)
-    st.text(perc_brown)
 
 def checkColor(img, colorMin, colorMax):
     img = img_as_ubyte(img)
@@ -198,7 +50,7 @@ def checkColor(img, colorMin, colorMax):
 
     st.session_state['totalPixeles'] = w*h
     st.session_state['cantDetectada'] = num_brown
-    st.session_state['percDetectado'] = perc_brown
+    st.session_state['percDetectado'] = round(perc_brown, 2)
     st.session_state['ImagenResultado'] = result
 
 def convert_df():
@@ -220,36 +72,95 @@ def add_to_List(sesion_name, value):
 
 bg_image = st.sidebar.file_uploader("Image:", type=["png", "jpg"])
 
-clicks = []
 if bg_image:
+    st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Elegida</h2>", unsafe_allow_html=True)
+
     pil_image = Image.open(bg_image)
     img = img_as_ubyte(pil_image)
-    st.session_state['RGB_img'] = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Elegida</h2>", unsafe_allow_html=True)
-    st.image(pil_image)
+
     if 'imgPoligono' not in st.session_state:
         st.session_state['imgPoligono'] = pil_image
+
+    newW,newH = pil_image.size
+    st.session_state['widthRelation'] = (newW/600)
+    st.session_state['heightRelation'] = (newH/400)
+    drawing_mode = "polygon"
+    stroke_width = 1
+    canvas_result = st_canvas(
+        fill_color="rgba(255, 165, 0, 0)",
+        stroke_width=stroke_width,
+        background_image=pil_image if bg_image else None,
+        update_streamlit='false',
+        drawing_mode=drawing_mode,
+        #Default hight 400
+        #Default width 600
+        key="canvas",
+    )
 else:
     cleanState()
 
-if (st.sidebar.button('Agregar Poligono')):
-    if 'imgPoligono' in st.session_state:
-        pil_image = st.session_state['imgPoligono'].copy()
-        RGB_img = convertImage(pil_image)
-        drawPoligon('clicksList','imgPoligono', RGB_img)
+if (st.sidebar.button('Agregar Poligonos') and 'imgPoligono' in st.session_state):
+    if canvas_result.json_data is not None:
+        formas=pd.json_normalize(canvas_result.json_data["objects"])
+
+        polygons = []
+        for index in range(0, len(formas)):
+            path = formas['path'][index]
+            polygon = []
+            for index in range(0, len(path)-1):
+                polygon.append((int(path[index][1] * st.session_state['widthRelation']),int(path[index][2] * st.session_state['heightRelation']))) 
+                if len(polygon) > 1:
+                    polygons.append(polygon)
+
+        for polygon in polygons:
+            if len(polygons) > 0:
+                draw = ImageDraw.Draw(st.session_state['imgPoligono'])
+                draw.polygon(polygon, fill="#FFFFFF")
+                st.session_state['imgPoligono'] = pil_image
 
 if 'imgPoligono' in st.session_state:
     st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Recortada</h2>", unsafe_allow_html=True)
     st.image(st.session_state['imgPoligono'])
 
+if bg_image:
+    st.markdown("<h2 style='text-align: center; color: grey;'>Elegir Colores</h2>", unsafe_allow_html=True)
+
+    pil_image = Image.open(bg_image)
+    pix = pil_image.load()
+    img = img_as_ubyte(pil_image)
+
+    canvas_color = st_canvas(
+        fill_color="rgba(255, 165, 0, 0)",  # Fixed fill color with some opacity
+        stroke_color="rgba(170, 255, 0, 0.8)",
+        background_image=pil_image if bg_image else None,
+        stroke_width = 1,
+        update_streamlit='false',
+        drawing_mode="point",
+        point_display_radius=1,
+        #Default hight 400
+        #Default width 600
+        key="canvas_color",
+    )
+
+    if canvas_color.json_data is not None:
+        formas=pd.json_normalize(canvas_color.json_data["objects"])
+        for index in range(0, len(formas)):
+            left = int(formas['left'][index]*st.session_state['widthRelation'])
+            top = int(formas['top'][index]*st.session_state['heightRelation'])
+            rgb = pix[left,top]
+            if st.session_state['RGB_type'] == 1:
+                st.session_state['minRGB'] = rgb
+            else:
+                st.session_state['maxRGB'] = rgb
+
 if (st.sidebar.button('Color Minimo (claro)') and 'RGB_img' in st.session_state):
-    pick_Color("minRGB", st.session_state['RGB_img'])
+    st.session_state['RGB_type'] = 1
 
 if 'minRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['minRGB'][0],st.session_state['minRGB'][1],st.session_state['minRGB'][2])))
 
 if (st.sidebar.button('Color Maximo (oscuro)') and 'RGB_img' in st.session_state):
-    pick_Color("maxRGB", st.session_state['RGB_img'])
+    st.session_state['RGB_type'] = 0
 
 if 'maxRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
