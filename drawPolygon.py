@@ -89,7 +89,7 @@ if bg_image:
     canvas_result = st_canvas(
         fill_color="rgba(255, 165, 0, 0)",
         stroke_width=stroke_width,
-        background_image=pil_image if bg_image else None,
+        background_image=Image.open(bg_image) if bg_image else None,
         update_streamlit='true',
         drawing_mode=drawing_mode,
         #Default hight 400
@@ -129,10 +129,12 @@ if bg_image:
     pix = pil_image.load()
     img = img_as_ubyte(pil_image)
 
+    st.text("BG_IMAGE")
+    st.image(Image.open(bg_image))
     canvas_color = st_canvas(
         fill_color="rgba(255, 165, 0, 0)",  # Fixed fill color with some opacity
         stroke_color="rgba(170, 255, 0, 0.8)",
-        background_image=pil_image if bg_image else None,
+        background_image=Image.open(bg_image) if bg_image else None,
         stroke_width = 1,
         update_streamlit='true',
         drawing_mode="point",
@@ -153,13 +155,13 @@ if bg_image:
             else:
                 st.session_state['maxRGB'] = rgb
 
-if (st.sidebar.button('Color Minimo (claro)') and 'RGB_img' in st.session_state):
+if (st.sidebar.button('Color Minimo (claro)')):
     st.session_state['RGB_type'] = 1
 
 if 'minRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['minRGB'][0],st.session_state['minRGB'][1],st.session_state['minRGB'][2])))
 
-if (st.sidebar.button('Color Maximo (oscuro)') and 'RGB_img' in st.session_state):
+if (st.sidebar.button('Color Maximo (oscuro)')):
     st.session_state['RGB_type'] = 0
 
 if 'maxRGB' in st.session_state:
