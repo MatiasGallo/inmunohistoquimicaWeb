@@ -129,15 +129,13 @@ if bg_image:
     pix = pil_image.load()
     img = img_as_ubyte(pil_image)
 
-    st.text("BG_IMAGE")
-    st.image(Image.open(bg_image))
     canvas_color = st_canvas(
         fill_color="rgba(255, 165, 0, 0)",  # Fixed fill color with some opacity
-        stroke_color="rgba(170, 255, 0, 0.8)",
+        stroke_color="rgba(170, 255, 0, 1)",
         background_image=Image.open(bg_image) if bg_image else None,
         stroke_width = 1,
         update_streamlit='true',
-        drawing_mode="point",
+        drawing_mode="circle",
         point_display_radius=1,
         #Default hight 400
         #Default width 600
