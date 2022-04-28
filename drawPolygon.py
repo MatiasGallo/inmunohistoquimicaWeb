@@ -136,7 +136,6 @@ if bg_image:
         stroke_width = 1,
         update_streamlit='true',
         drawing_mode="circle",
-        point_display_radius=1,
         #Default hight 400
         #Default width 600
         key="canvas_color",
