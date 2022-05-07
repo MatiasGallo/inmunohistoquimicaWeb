@@ -12,15 +12,19 @@ if ('RGB_type' not in st.session_state):
 
 if ('minRGB' not in st.session_state):
     st.session_state['minRGB']=np.array([255, 255, 255], dtype=np.uint8)
+    st.session_state['minPickRGB']=np.array([255, 255, 255], dtype=np.uint8)
 
 if ('maxRGB' not in st.session_state):
     st.session_state['maxRGB']=np.array([0, 0, 0], dtype=np.uint8)
+    st.session_state['maxPickRGB']=np.array([0, 0, 0], dtype=np.uint8)
 
 if ('dataFrame_name' not in st.session_state):
     st.session_state['dataFrame_name'] = {}
     st.session_state['dataFrame_total'] = {}
     st.session_state['dataFrame_total_encontrados'] = {}
     st.session_state['dataFrame_perc_encontrados'] = {}
+    st.session_state['color_min'] = {}
+    st.session_state['color_max'] = {}
 
 def cleanState():
     if 'imgPoligono' in st.session_state:
@@ -58,7 +62,9 @@ def convert_df():
      'Nombre': st.session_state['dataFrame_name'],
      'Total Pixeles': st.session_state['dataFrame_total'],
      'Pixeles Detectados': st.session_state['dataFrame_total_encontrados'],
-     '% Pixeles Detectados': st.session_state['dataFrame_perc_encontrados']
+     '% Pixeles Detectados': st.session_state['dataFrame_perc_encontrados'],
+     'Color Minimo': st.session_state['color_min'],
+     'Color Maximo': st.session_state['color_max']
     }
 
     df = pd.DataFrame(data=d)
@@ -148,9 +154,9 @@ if bg_image:
             top = int(formas['top'][index]*st.session_state['heightRelation'])
             rgb = pix[left,top]
             if st.session_state['RGB_type'] == 1:
-                st.session_state['minRGB'] = rgb
+                st.session_state['minRGB'] = np.array(rgb, dtype=np.uint8)
             else:
-                st.session_state['maxRGB'] = rgb
+                st.session_state['maxRGB'] = np.array(rgb, dtype=np.uint8)
 
 if (st.sidebar.button('Color Minimo (claro)')):
     st.session_state['RGB_type'] = 1
@@ -166,6 +172,8 @@ if 'maxRGB' in st.session_state:
 
 if (st.sidebar.button('Calcular') and 'imgPoligono' in st.session_state and 'minRGB' in st.session_state):
     checkColor(st.session_state['imgPoligono'], st.session_state['maxRGB'], st.session_state['minRGB'])
+    st.session_state['minPickRGB'] = st.session_state['minRGB']
+    st.session_state['maxPickRGB'] = st.session_state['maxRGB']
 
 if 'ImagenResultado' in st.session_state:
     st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Resultado</h2>", unsafe_allow_html=True)
@@ -182,6 +190,8 @@ if st.sidebar.button('Iniciar Reporte'):
     st.session_state['dataFrame_total'] = {}
     st.session_state['dataFrame_total_encontrados'] = {}
     st.session_state['dataFrame_perc_encontrados'] = {}
+    st.session_state['color_min'] = {}
+    st.session_state['color_max'] = {}
     st.sidebar.success('Reporte Iniciado')
 
 if st.sidebar.button('Agregar Dato'):
@@ -190,6 +200,8 @@ if st.sidebar.button('Agregar Dato'):
         add_to_List('dataFrame_total', st.session_state['totalPixeles'])
         add_to_List('dataFrame_total_encontrados', st.session_state['cantDetectada'])
         add_to_List('dataFrame_perc_encontrados', st.session_state['percDetectado'])
+        add_to_List('color_min', st.session_state['minPickRGB'])
+        add_to_List('color_max', st.session_state['maxPickRGB'])
         st.sidebar.success('Dato añadido')
 
 st.sidebar.download_button(
