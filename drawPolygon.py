@@ -6,6 +6,10 @@ from streamlit_drawable_canvas import st_canvas
 import PIL.ImageDraw as ImageDraw
 import numpy as np
 import pandas as pd
+from shapely.geometry import Polygon
+
+if ('total_polygons_area' not in st.session_state):
+    st.session_state['total_polygons_area']=0
 
 if ('RGB_type' not in st.session_state):
     st.session_state['RGB_type']=1
@@ -37,6 +41,8 @@ def cleanState():
         del st.session_state['percDetectado']
     if 'ImagenResultado' in st.session_state:
         del st.session_state['ImagenResultado']
+    if 'total_polygons_area' in st.session_state:
+        del st.session_state['total_polygons_area']
 
 def checkColor(img, colorMin, colorMax):
     img = img_as_ubyte(img)
@@ -46,13 +52,16 @@ def checkColor(img, colorMin, colorMax):
     upper_brown = np.array(colorMax)
 
     w,h,c = frame.shape
+
+    size = w * h - st.session_state['total_polygons_area'] 
+
     mask = cv2.inRange(frame, lower_brown, upper_brown)
     num_brown = cv2.countNonZero(mask)
-    perc_brown = num_brown/float(w*h)*100
+    perc_brown = num_brown/float(size)*100
 
     result = cv2.bitwise_and(frame, frame, mask=mask)
 
-    st.session_state['totalPixeles'] = w*h
+    st.session_state['totalPixeles'] = size
     st.session_state['cantDetectada'] = num_brown
     st.session_state['percDetectado'] = round(perc_brown, 2)
     st.session_state['ImagenResultado'] = result
@@ -115,14 +124,21 @@ if (st.sidebar.button('Agregar Poligonos') and 'imgPoligono' in st.session_state
             polygon = []
             for index in range(0, len(path)-1):
                 polygon.append((int(path[index][1] * st.session_state['widthRelation']),int(path[index][2] * st.session_state['heightRelation']))) 
-                if len(polygon) > 1:
-                    polygons.append(polygon)
+            if len(polygon) > 1:
+                polygons.append(polygon)
 
+        area_poligonos = 0
         for polygon in polygons:
-            if len(polygons) > 0:
-                draw = ImageDraw.Draw(st.session_state['imgPoligono'])
+            if len(polygon) > 0:
+                pil_image = st.session_state['imgPoligono']
+                draw = ImageDraw.Draw(pil_image)
                 draw.polygon(polygon, fill="#FFFFFF")
                 st.session_state['imgPoligono'] = pil_image
+
+                pgon = Polygon(polygon)
+                area_poligonos = area_poligonos + pgon.area
+        
+        st.session_state['total_polygons_area'] = area_poligonos
 
 if 'imgPoligono' in st.session_state:
     st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Recortada</h2>", unsafe_allow_html=True)
