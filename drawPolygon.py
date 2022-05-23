@@ -105,11 +105,12 @@ if bg_image:
         fill_color="rgba(255, 165, 0, 0)",
         stroke_width=stroke_width,
         background_image=Image.open(bg_image) if bg_image else None,
-        update_streamlit='true',
+        update_streamlit=False,
         drawing_mode=drawing_mode,
         #Default hight 400
         #Default width 600
         key="canvas",
+        #display_toolbar=False,
     )
 else:
     cleanState()
@@ -156,11 +157,12 @@ if bg_image:
         stroke_color="rgba(170, 255, 0, 1)",
         background_image=Image.open(bg_image) if bg_image else None,
         stroke_width = 1,
-        update_streamlit='true',
+        update_streamlit=True,
         drawing_mode="circle",
         #Default hight 400
         #Default width 600
         key="canvas_color",
+        display_toolbar=False,
     )
 
     if canvas_color.json_data is not None:
