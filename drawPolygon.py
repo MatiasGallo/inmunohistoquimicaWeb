@@ -9,7 +9,7 @@ import pandas as pd
 from shapely.geometry import Polygon
 
 if ('total_polygons_area' not in st.session_state):
-    st.session_state['total_polygons_area']=0
+    st.session_state['total_polygons_area']=[]
 
 if ('RGB_type' not in st.session_state):
     st.session_state['RGB_type']=1
@@ -53,7 +53,7 @@ def checkColor(img, colorMin, colorMax):
 
     w,h,c = frame.shape
 
-    size = w * h - st.session_state['total_polygons_area'] 
+    size = w * h - sum(st.session_state['total_polygons_area'])
 
     mask = cv2.inRange(frame, lower_brown, upper_brown)
     num_brown = cv2.countNonZero(mask)
@@ -118,7 +118,6 @@ else:
 if (st.sidebar.button('Agregar Poligonos') and 'imgPoligono' in st.session_state):
     if canvas_result.json_data is not None:
         formas=pd.json_normalize(canvas_result.json_data["objects"])
-
         polygons = []
         for index in range(0, len(formas)):
             path = formas['path'][index]
@@ -128,7 +127,7 @@ if (st.sidebar.button('Agregar Poligonos') and 'imgPoligono' in st.session_state
             if len(polygon) > 1:
                 polygons.append(polygon)
 
-        area_poligonos = 0
+        area_poligonos = st.session_state['total_polygons_area']
         for polygon in polygons:
             if len(polygon) > 0:
                 pil_image = st.session_state['imgPoligono']
@@ -137,9 +136,10 @@ if (st.sidebar.button('Agregar Poligonos') and 'imgPoligono' in st.session_state
                 st.session_state['imgPoligono'] = pil_image
 
                 pgon = Polygon(polygon)
-                area_poligonos = area_poligonos + pgon.area
-        
-        st.session_state['total_polygons_area'] = area_poligonos
+                print(pgon.area)
+                area_poligonos.append(pgon.area)
+                
+        st.session_state['total_polygons_area'] = list(dict.fromkeys(area_poligonos))
 
 if 'imgPoligono' in st.session_state:
     st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Recortada</h2>", unsafe_allow_html=True)
