@@ -115,7 +115,7 @@ if bg_image:
 else:
     cleanState()
 
-if (st.sidebar.button('Agregar Poligonos') and 'imgPoligono' in st.session_state):
+if (st.sidebar.button('Agregar Poligonos', disabled=('imgPoligono' not in st.session_state))):
     if canvas_result.json_data is not None:
         formas=pd.json_normalize(canvas_result.json_data["objects"])
         polygons = []
@@ -136,7 +136,6 @@ if (st.sidebar.button('Agregar Poligonos') and 'imgPoligono' in st.session_state
                 st.session_state['imgPoligono'] = pil_image
 
                 pgon = Polygon(polygon)
-                print(pgon.area)
                 area_poligonos.append(pgon.area)
                 
         st.session_state['total_polygons_area'] = list(dict.fromkeys(area_poligonos))
@@ -176,19 +175,19 @@ if bg_image:
             else:
                 st.session_state['maxRGB'] = np.array(rgb, dtype=np.uint8)
 
-if (st.sidebar.button('Color Minimo (claro)')):
+if (st.sidebar.button('Color Minimo (claro)', disabled=(st.session_state['RGB_type'] == 1))):
     st.session_state['RGB_type'] = 1
 
 if 'minRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['minRGB'][0],st.session_state['minRGB'][1],st.session_state['minRGB'][2])))
 
-if (st.sidebar.button('Color Maximo (oscuro)')):
+if (st.sidebar.button('Color Maximo (oscuro)', disabled=(st.session_state['RGB_type'] == 0))):
     st.session_state['RGB_type'] = 0
 
 if 'maxRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
 
-if (st.sidebar.button('Calcular') and 'imgPoligono' in st.session_state and 'minRGB' in st.session_state):
+if (st.sidebar.button('Calcular', disabled=('imgPoligono' not in st.session_state))):
     checkColor(st.session_state['imgPoligono'], st.session_state['maxRGB'], st.session_state['minRGB'])
     st.session_state['minPickRGB'] = st.session_state['minRGB']
     st.session_state['maxPickRGB'] = st.session_state['maxRGB']
@@ -212,15 +211,14 @@ if st.sidebar.button('Iniciar Reporte'):
     st.session_state['color_max'] = {}
     st.sidebar.success('Reporte Iniciado')
 
-if st.sidebar.button('Agregar Dato'):
-    if 'ImagenResultado' in st.session_state:
-        add_to_List('dataFrame_name', bg_image.name)
-        add_to_List('dataFrame_total', st.session_state['totalPixeles'])
-        add_to_List('dataFrame_total_encontrados', st.session_state['cantDetectada'])
-        add_to_List('dataFrame_perc_encontrados', st.session_state['percDetectado'])
-        add_to_List('color_min', st.session_state['minPickRGB'])
-        add_to_List('color_max', st.session_state['maxPickRGB'])
-        st.sidebar.success('Dato añadido')
+if st.sidebar.button('Agregar Dato', disabled=('ImagenResultado' not in st.session_state)):
+    add_to_List('dataFrame_name', bg_image.name)
+    add_to_List('dataFrame_total', st.session_state['totalPixeles'])
+    add_to_List('dataFrame_total_encontrados', st.session_state['cantDetectada'])
+    add_to_List('dataFrame_perc_encontrados', st.session_state['percDetectado'])
+    add_to_List('color_min', st.session_state['minPickRGB'])
+    add_to_List('color_max', st.session_state['maxPickRGB'])
+    st.sidebar.success('Dato añadido')
 
 st.sidebar.download_button(
    "Descargar reporte",

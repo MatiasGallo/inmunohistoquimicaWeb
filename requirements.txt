@@ -6,6 +6,6 @@ pandas==1.3.4
 Pillow==9.1.0
 scikit-image
 scipy==1.7.3
-streamlit==1.2.0
+streamlit==1.4.0
 streamlit_drawable_canvas==0.8.0
 shapely==1.8.2
