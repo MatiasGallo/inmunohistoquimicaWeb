@@ -91,7 +91,6 @@ if bg_image:
     st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Elegida</h2>", unsafe_allow_html=True)
 
     pil_image = Image.open(bg_image)
-    img = img_as_ubyte(pil_image)
 
     if 'imgPoligono' not in st.session_state:
         st.session_state['imgPoligono'] = pil_image
@@ -175,17 +174,16 @@ if bg_image:
             else:
                 st.session_state['maxRGB'] = np.array(rgb, dtype=np.uint8)
 
-if (st.sidebar.button('Color Minimo (claro)', disabled=(st.session_state['RGB_type'] == 1))):
+if (st.sidebar.button('Color Minimo (Claro)')):
     st.session_state['RGB_type'] = 1
 
 if 'minRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['minRGB'][0],st.session_state['minRGB'][1],st.session_state['minRGB'][2])))
 
-if (st.sidebar.button('Color Maximo (oscuro)', disabled=(st.session_state['RGB_type'] == 0))):
+if (st.sidebar.button('Color Maximo (Oscuro)')):
     st.session_state['RGB_type'] = 0
 
-if 'maxRGB' in st.session_state:
-    st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
+st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
 
 if (st.sidebar.button('Calcular', disabled=('imgPoligono' not in st.session_state))):
     checkColor(st.session_state['imgPoligono'], st.session_state['maxRGB'], st.session_state['minRGB'])
