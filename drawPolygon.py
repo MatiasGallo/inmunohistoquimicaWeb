@@ -160,7 +160,7 @@ if bg_image:
         #Default hight 400
         #Default width 600
         key="canvas_color",
-        display_toolbar=False,
+        display_toolbar=True,
     )
 
     if canvas_color.json_data is not None:
@@ -175,15 +175,23 @@ if bg_image:
                 st.session_state['maxRGB'] = np.array(rgb, dtype=np.uint8)
 
 if (st.sidebar.button('Color Minimo (Claro)')):
+    st.sidebar.success("Presionado")
     st.session_state['RGB_type'] = 1
 
 if 'minRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['minRGB'][0],st.session_state['minRGB'][1],st.session_state['minRGB'][2])))
 
 if (st.sidebar.button('Color Maximo (Oscuro)')):
+    st.sidebar.success("Presionado")
     st.session_state['RGB_type'] = 0
 
-st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
+if 'maxRGB' in st.session_state:
+    st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
+
+if (st.sidebar.button('Reiniciar Maximo (Oscuro)')):
+    st.sidebar.warning("Es necesario utilizar la papelera en la seccion Elegir Colores")
+    st.session_state['maxRGB']=np.array([0, 0, 0], dtype=np.uint8)
+    st.session_state['maxPickRGB']=np.array([0, 0, 0], dtype=np.uint8)
 
 if (st.sidebar.button('Calcular', disabled=('imgPoligono' not in st.session_state))):
     checkColor(st.session_state['imgPoligono'], st.session_state['maxRGB'], st.session_state['minRGB'])
