@@ -94,6 +94,7 @@ if bg_image:
 
     if 'imgPoligono' not in st.session_state:
         st.session_state['imgPoligono'] = pil_image
+        st.session_state['original'] = pil_image.copy()
 
     newW,newH = pil_image.size
     st.session_state['widthRelation'] = (newW/600)
@@ -115,6 +116,10 @@ else:
     cleanState()
 
 if (st.sidebar.button('Agregar Poligonos', disabled=('imgPoligono' not in st.session_state))):
+    if 'total_polygons_area' in st.session_state:
+        st.session_state['total_polygons_area'] = []
+    del st.session_state['imgPoligono']
+    st.session_state['imgPoligono'] = st.session_state['original'].copy()
     if canvas_result.json_data is not None:
         formas=pd.json_normalize(canvas_result.json_data["objects"])
         polygons = []
