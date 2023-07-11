@@ -15,12 +15,18 @@ if ('RGB_type' not in st.session_state):
     st.session_state['RGB_type']=1
 
 if ('minRGB' not in st.session_state):
-    st.session_state['minRGB']=np.array([255, 255, 255], dtype=np.uint8)
-    st.session_state['minPickRGB']=np.array([255, 255, 255], dtype=np.uint8)
+    st.session_state['minRGB']=np.array([115, 103, 89], dtype=np.uint8)
+    st.session_state['minPickRGB']=np.array([115, 103, 89], dtype=np.uint8)
 
 if ('maxRGB' not in st.session_state):
     st.session_state['maxRGB']=np.array([0, 0, 0], dtype=np.uint8)
     st.session_state['maxPickRGB']=np.array([0, 0, 0], dtype=np.uint8)
+
+if ('BlueminRGB' not in st.session_state):
+    st.session_state['BlueminRGB']=np.array([65, 68, 103], dtype=np.uint8)
+
+if ('BluemaxRGB' not in st.session_state):
+    st.session_state['BluemaxRGB']=np.array([115, 119, 131], dtype=np.uint8)
 
 if ('dataFrame_name' not in st.session_state):
     st.session_state['dataFrame_name'] = {}
@@ -29,6 +35,11 @@ if ('dataFrame_name' not in st.session_state):
     st.session_state['dataFrame_perc_encontrados'] = {}
     st.session_state['color_min'] = {}
     st.session_state['color_max'] = {}
+    st.session_state['dataFrame_total_encontrados_azul'] = {}
+    st.session_state['dataFrame_perc_encontrados_azul'] = {}
+    st.session_state['color_min_azul'] = {}
+    st.session_state['color_max_azul'] = {}
+    st.session_state['resultado'] = {}
 
 def cleanState():
     if 'imgPoligono' in st.session_state:
@@ -39,8 +50,16 @@ def cleanState():
         del st.session_state['cantDetectada']
     if 'percDetectado' in st.session_state:
         del st.session_state['percDetectado']
+    if 'totalPixelesBlue' in st.session_state:
+        del st.session_state['totalPixelesBlue']
+    if 'cantDetectadaBlue' in st.session_state:
+        del st.session_state['cantDetectadaBlue']
+    if 'percDetectadoBlue' in st.session_state:
+        del st.session_state['percDetectadoBlue']
     if 'ImagenResultado' in st.session_state:
         del st.session_state['ImagenResultado']
+    if 'ImagenResultadoBlue' in st.session_state:
+        del st.session_state['ImagenResultadoBlue']
     if 'total_polygons_area' in st.session_state:
         del st.session_state['total_polygons_area']
 
@@ -61,10 +80,7 @@ def checkColor(img, colorMin, colorMax):
 
     result = cv2.bitwise_and(frame, frame, mask=mask)
 
-    st.session_state['totalPixeles'] = size
-    st.session_state['cantDetectada'] = num_brown
-    st.session_state['percDetectado'] = round(perc_brown, 2)
-    st.session_state['ImagenResultado'] = result
+    return [size,num_brown, round(perc_brown, 2), result]
 
 def convert_df():
     d = {
@@ -73,7 +89,12 @@ def convert_df():
      'Pixeles Detectados': st.session_state['dataFrame_total_encontrados'],
      '% Pixeles Detectados': st.session_state['dataFrame_perc_encontrados'],
      'Color Minimo': st.session_state['color_min'],
-     'Color Maximo': st.session_state['color_max']
+     'Color Maximo': st.session_state['color_max'],
+     'Pixeles Detectados (Azul)': st.session_state['dataFrame_total_encontrados_azul'],
+     '% Pixeles Detectados (Azul)': st.session_state['dataFrame_perc_encontrados_azul'],
+     'Color Minimo (Azul)': st.session_state['color_min_azul'],
+     'Color Maximo (Azul)': st.session_state['color_max_azul'],
+     'Resultado': st.session_state['resultado']
     }
 
     df = pd.DataFrame(data=d)
@@ -176,8 +197,12 @@ if bg_image:
             rgb = pix[left,top]
             if st.session_state['RGB_type'] == 1:
                 st.session_state['minRGB'] = np.array(rgb, dtype=np.uint8)
-            else:
+            elif st.session_state['RGB_type'] == 2:
                 st.session_state['maxRGB'] = np.array(rgb, dtype=np.uint8)
+            elif st.session_state['RGB_type'] == 3:
+                st.session_state['BluemaxRGB'] = np.array(rgb, dtype=np.uint8)
+            elif st.session_state['RGB_type'] == 4:
+                st.session_state['BlueminRGB'] = np.array(rgb, dtype=np.uint8)
 
 if (st.sidebar.button('Color Minimo (Claro)')):
     st.sidebar.success("Presionado")
@@ -188,7 +213,7 @@ if 'minRGB' in st.session_state:
 
 if (st.sidebar.button('Color Maximo (Oscuro)')):
     st.sidebar.success("Presionado")
-    st.session_state['RGB_type'] = 0
+    st.session_state['RGB_type'] = 2
 
 if 'maxRGB' in st.session_state:
     st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['maxRGB'][0],st.session_state['maxRGB'][1],st.session_state['maxRGB'][2])))
@@ -198,18 +223,54 @@ if (st.sidebar.button('Reiniciar Maximo (Oscuro)')):
     st.session_state['maxRGB']=np.array([0, 0, 0], dtype=np.uint8)
     st.session_state['maxPickRGB']=np.array([0, 0, 0], dtype=np.uint8)
 
+if (st.sidebar.button('Color Minimo Azul (Claro)')):
+    st.sidebar.success("Presionado")
+    st.session_state['RGB_type'] = 3
+
+if 'BluemaxRGB' in st.session_state:
+    st.sidebar.image(Image.new('RGB', (50, 50), (st.session_state['BluemaxRGB'][0],st.session_state['BluemaxRGB'][1],st.session_state['BluemaxRGB'][2])))
+
+if (st.sidebar.button('Color Maximo Azul (Oscuro)')):
+    st.sidebar.success("Presionado")
+    st.session_state['RGB_type'] = 4
+
+if 'BlueminRGB' in st.session_state:
+    st.sidebar.image(Image.new('RGB', (50, 50),(st.session_state['BlueminRGB'][0],st.session_state['BlueminRGB'][1],st.session_state['BlueminRGB'][2])))
+
 if (st.sidebar.button('Calcular', disabled=('imgPoligono' not in st.session_state))):
-    checkColor(st.session_state['imgPoligono'], st.session_state['maxRGB'], st.session_state['minRGB'])
-    st.session_state['minPickRGB'] = st.session_state['minRGB']
-    st.session_state['maxPickRGB'] = st.session_state['maxRGB']
+    #Detect Brown
+    colorResult = checkColor(st.session_state['imgPoligono'], st.session_state['maxRGB'], st.session_state['minRGB'])
+    st.session_state['totalPixeles'] = colorResult[0]
+    st.session_state['cantDetectada'] = colorResult[1]
+    st.session_state['percDetectado'] = colorResult[2]
+    st.session_state['ImagenResultado'] = colorResult[3]
+    #Detect Blue
+    colorBlueResult = checkColor(st.session_state['imgPoligono'], st.session_state['BlueminRGB'], st.session_state['BluemaxRGB'])
+    st.session_state['totalPixelesBlue'] = colorBlueResult[0]
+    st.session_state['cantDetectadaBlue'] = colorBlueResult[1]
+    st.session_state['percDetectadoBlue'] = colorBlueResult[2]
+    st.session_state['ImagenResultadoBlue'] = colorBlueResult[3]
 
 if 'ImagenResultado' in st.session_state:
-    st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Resultado</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Resultado (Positivo)</h2>", unsafe_allow_html=True)
     st.image(st.session_state['ImagenResultado'])
-    st.markdown("<h2 style='text-align: center; color: grey;'>Resultados</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: grey;'>Resultados Marron (Positivo)</h2>", unsafe_allow_html=True)
     st.markdown("<h5 style='text-align: center; color: grey;'>" + "Total pixels: " + str(st.session_state['totalPixeles']) +"</h5>", unsafe_allow_html=True)
     st.markdown("<h5 style='text-align: center; color: grey;'>" + "Pixels detectados: " + str(st.session_state['cantDetectada']) +"</h5>", unsafe_allow_html=True)
     st.markdown("<h5 style='text-align: center; color: grey;'>" + "% detectados: " + str(st.session_state['percDetectado']) +"</h5>", unsafe_allow_html=True)
+
+if 'ImagenResultadoBlue' in st.session_state:
+    st.markdown("<h2 style='text-align: center; color: grey;'>Imagen Resultado Azul (Negativo)</h2>", unsafe_allow_html=True)
+    st.image(st.session_state['ImagenResultadoBlue'])
+    st.markdown("<h2 style='text-align: center; color: grey;'>Resultados Azul (Negativo)</h2>", unsafe_allow_html=True)
+    st.markdown("<h5 style='text-align: center; color: grey;'>" + "Total pixels: " + str(st.session_state['totalPixelesBlue']) +"</h5>", unsafe_allow_html=True)
+    st.markdown("<h5 style='text-align: center; color: grey;'>" + "Pixels detectados: " + str(st.session_state['cantDetectadaBlue']) +"</h5>", unsafe_allow_html=True)
+    st.markdown("<h5 style='text-align: center; color: grey;'>" + "% detectados: " + str(st.session_state['percDetectadoBlue']) +"</h5>", unsafe_allow_html=True)
+
+if 'ImagenResultadoBlue' in st.session_state and 'ImagenResultado' in st.session_state:
+    st.markdown("<h2 style='text-align: center; color: grey;'>Resultados Finales</h2>", unsafe_allow_html=True)
+    resultadofinal =  round(st.session_state['cantDetectada'] / (st.session_state['cantDetectadaBlue'] + st.session_state['cantDetectada']),2)
+    st.markdown("<h5 style='text-align: center; color: grey;'>" + "% Positivos detectados: " + str(resultadofinal) +"</h5>", unsafe_allow_html=True)
 
 st.sidebar.text("---------------------------------")
 
@@ -229,6 +290,11 @@ if st.sidebar.button('Agregar Dato', disabled=('ImagenResultado' not in st.sessi
     add_to_List('dataFrame_perc_encontrados', st.session_state['percDetectado'])
     add_to_List('color_min', st.session_state['minPickRGB'])
     add_to_List('color_max', st.session_state['maxPickRGB'])
+    add_to_List('dataFrame_total_encontrados_azul', st.session_state['cantDetectadaBlue'])
+    add_to_List('dataFrame_perc_encontrados_azul', st.session_state['percDetectadoBlue'])
+    add_to_List('color_min_azul', st.session_state['BluemaxRGB'])
+    add_to_List('color_max_azul', st.session_state['BlueminRGB'])
+    add_to_List('resultado', round(st.session_state['cantDetectada'] / (st.session_state['cantDetectadaBlue'] + st.session_state['cantDetectada']),2))
     st.sidebar.success('Dato añadido')
 
 st.sidebar.download_button(

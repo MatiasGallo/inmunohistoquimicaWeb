@@ -1,6 +1,6 @@
 Set up:
 
-docker build -t streamlit .
+docker build -t streamlit . --no-cache
 
 To run:
 

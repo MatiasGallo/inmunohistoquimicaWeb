@@ -17,6 +17,7 @@ RUN pip3 install -r requirements.txt
 
 RUN pip install --upgrade "protobuf<=3.20.1"
 RUN pip install --upgrade "click<=8.0.4"
+RUN pip install "altair<5"
 
 EXPOSE 8501
 
